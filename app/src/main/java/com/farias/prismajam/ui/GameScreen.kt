@@ -285,6 +285,7 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
     val pulseT by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Reverse), label = "g")
 
     val slab = frame * 0.55f
+    val localDensity = androidx.compose.ui.platform.LocalDensity.current
     Box(Modifier.height(maxH), contentAlignment = Alignment.Center) {
         Canvas(
             Modifier
@@ -297,8 +298,8 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                     scaleY = 0.94f
                 }
                 .onGloballyPositioned { coords ->
-                    val f = frame.toPx()
-                    vm.cellPx = cell.toPx()
+                    val f = with(localDensity) { frame.toPx() }
+                    vm.cellPx = with(localDensity) { cell.toPx() }
                     vm.boardOrigin = Offset(f, f)
                     vm.toRoot = { p -> if (coords.isAttached) coords.localToRoot(p) else p }
                 }
