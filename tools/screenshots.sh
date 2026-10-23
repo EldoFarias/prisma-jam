@@ -49,4 +49,5 @@ shot "tablet-landscape-game" game 12 landscape
 adb shell settings put system user_rotation 0
 adb shell wm size reset
 adb shell wm density reset
+find shots -size 0 -delete
 ls -la shots
