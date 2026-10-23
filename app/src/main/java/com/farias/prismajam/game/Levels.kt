@@ -44,11 +44,13 @@ object JamLevels {
 
     private fun sizeFor(n: Int, rnd: Random): Pair<Int, Int> = when {
         // Portrait boards (more rows than columns) fill the tall phone screen.
-        n <= 3 -> 6 to 5
-        n <= 10 -> 7 to 5
-        n <= 25 -> 8 to 6
-        n <= 50 -> if (rnd.nextBoolean()) 8 to 6 else 9 to 6
-        else -> if (rnd.nextBoolean()) 9 to 7 else 10 to 7
+        // At most 8 columns so a cell stays finger-sized on phones.
+        n <= 3 -> 7 to 5
+        n <= 10 -> 8 to 6
+        n <= 25 -> 9 to 6
+        n <= 50 -> if (rnd.nextBoolean()) 9 to 7 else 10 to 7
+        n <= 80 -> 10 to 7
+        else -> if (rnd.nextBoolean()) 10 to 8 else 11 to 8
     }
 
     private fun colorsFor(n: Int): Int = when {
