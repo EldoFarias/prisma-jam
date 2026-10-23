@@ -286,8 +286,8 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
     val cols = vm.cols
     // Frame thickness is ~0.42 cell on each side (room for the gates).
     // Leave a margin around the board and keep cells moderate so pieces don't look oversized.
-    // The tilted, stretched board is ~12% taller on screen than its layout: keep room for that.
-    val cell = minOf((maxW - 12.dp) / (cols + 0.84f), maxH * 0.86f / (rows + 1.07f)).coerceAtMost(76.dp)
+    // Board as wide as the screen minus 32 dp on each side (height permitting).
+    val cell = minOf((maxW + 16.dp - 64.dp) / (cols + 0.84f), maxH / (rows + 1.07f))
     val frame = cell * 0.42f
     val w = cell * cols + frame * 2
     val h = cell * rows + frame * 2
@@ -304,10 +304,6 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                 // A gentle 3D tilt: the board lies on a table, the far edge leaning away.
                 .graphicsLayer {
                     rotationX = BOARD_TILT
-                    cameraDistance = 12f * density
-                    // Narrower so the near (wider) edge still fits; taller so the board reads long.
-                    scaleX = 0.9f
-                    scaleY = 1.08f
                 }
                 .onGloballyPositioned { coords ->
                     val f = with(localDensity) { frame.toPx() }
@@ -604,4 +600,4 @@ private fun FloatingTextItem(t: FloatText, fx: Fx) {
 }
 
 /** Degrees the board leans back (3D look). */
-private const val BOARD_TILT = 20f
+private const val BOARD_TILT = 0f // flat, seen from above (blocks keep their 3D thickness)

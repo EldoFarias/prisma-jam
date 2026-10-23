@@ -112,7 +112,7 @@ object JamLevels {
         while (filled < targetFill && guard < 900) {
             guard++
             // Keep the colors balanced: usually pick the color with the fewest cells so far.
-            val color = if (rnd.nextFloat() < 0.75f) {
+            val color = if (rnd.nextFloat() < 0.9f) {
                 val least = colors.minOf { cellsOf[it] ?: 0 }
                 colors.filter { (cellsOf[it] ?: 0) == least }.let { it[rnd.nextInt(it.size)] }
             } else colors[rnd.nextInt(colors.size)]
