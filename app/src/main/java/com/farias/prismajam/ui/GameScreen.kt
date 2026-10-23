@@ -286,7 +286,8 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
     val cols = vm.cols
     // Frame thickness is ~0.42 cell on each side (room for the gates).
     // Leave a margin around the board and keep cells moderate so pieces don't look oversized.
-    val cell = minOf((maxW - 12.dp) / (cols + 0.84f), maxH / (rows + 1.07f)).coerceAtMost(76.dp)
+    // The tilted, stretched board is ~12% taller on screen than its layout: keep room for that.
+    val cell = minOf((maxW - 12.dp) / (cols + 0.84f), maxH * 0.86f / (rows + 1.07f)).coerceAtMost(76.dp)
     val frame = cell * 0.42f
     val w = cell * cols + frame * 2
     val h = cell * rows + frame * 2
@@ -542,7 +543,7 @@ private fun HintPill(text: String, vm: GameViewModel) {
             layout(constraints.maxWidth, constraints.maxHeight) {
                 vm.fx.frame.longValue
                 val x = (constraints.maxWidth - placeable.width) / 2
-                val y = (vm.screenAt(Offset(0f, vm.rows + 0.6f)).y + 16.dp.toPx()).roundToInt()
+                val y = (vm.screenAt(Offset(0f, vm.rows + 0.85f)).y + 14.dp.toPx()).roundToInt()
                 placeable.place(x, y)
             }
         },
