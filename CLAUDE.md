@@ -22,7 +22,11 @@ adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
 ## Regras do jogo
 
 - Arrasta-se um bloco (polyominó) célula a célula; ele sai do tabuleiro quando empurrado contra uma porta da sua cor
-  que cubra toda a largura dele naquele lado.
+  que cubra toda a largura dele naquele lado, e só se **cada quadrado** tiver caminho livre até a borda.
+- Fases infinitas e determinísticas (`JamLevels.level(n)`). A cada 10 fases uma "difícil" (coroa no mapa): só 1 bloco
+  livre no início e muitas rodadas; a seguinte é mais leve. Fases normais: no máximo 2–4 blocos livres no início.
+  O gerador monta de trás pra frente e depois "aperta" (blocos que fecham a saída dos livres), sempre conferindo com o solver.
+- Desafio diário: `JamLevels.daily(dia)`, igual para todos no dia; estrelas 1–3 por tempo restante.
 - Pedras (fase 8+) são fixas. Gelo (fase 12+): o número diminui a cada bloco que sai; com 0 o bloco solta.
   Setas (fase 18+): bloco só anda na horizontal ou vertical.
 - Relógio começa no primeiro toque. Poderes: Congelar (10 s) e Martelo (quebra um bloco). +30 s por vídeo uma vez por fase.
@@ -48,7 +52,11 @@ adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
   `python3 tools/strings.py app/src/main/res`.
 - Gradientes radiais com raio 0 derrubam o app: proteger tamanhos < 1 px.
 - Telas se adaptam: compacto e deitado; em tablet o app inteiro é desenhado maior (`Scaled` no MainActivity).
-- Tabuleiro inclinado em 3D (`graphicsLayer rotationX`): toques chegam no espaço do tabuleiro; efeitos na tela usam `vm.screenAt()`. `android:appCategory="game"` mantém retrato no Android 16.
+- Tabuleiro reto visto de cima (o Eldo não gostou da inclinação), largura da tela menos 32 dp por lado; blocos têm espessura 3D. Toques chegam no espaço do tabuleiro; efeitos na tela usam `vm.screenAt()`. `android:appCategory="game"` mantém retrato no Android 16.
+
+## Forma de trabalho
+
+- Não tirar prints no emulador: só publicar o APK (push na `main`); o Eldo testa no celular e manda prints.
 
 ## Pendências
 

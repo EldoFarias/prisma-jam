@@ -24,24 +24,40 @@ object JamLevels {
      */
     fun daily(day: Int): JamLevel = level(30 + (day % 37) * 2, salt = day * 2_654_435_761L)
 
+    /** Every 10th level is a "hard" one (crown on the map); the one after is a breather. */
+    fun isHard(n: Int) = n >= 10 && n % 10 == 0
+
     fun level(number: Int, salt: Long = 0L): JamLevel {
         val n = number.coerceAtLeast(1)
         val d = ((n - 1) / 80f).coerceIn(0f, 1f)
-        for (attempt in 0 until 60) {
+        val hard = isHard(n)
+        val breather = n > 10 && n % 10 == 1
+        // Rounds of exits the player must find, in order (more = more planning).
+        val minWaves = when {
+            n <= 3 -> 1
+            n <= 10 -> 2
+            else -> 2 + (d * 2).roundToInt()
+        } + (if (hard) 2 else 0) - (if (breather) 1 else 0)
+        // How many blocks may leave right away: few = a narrow path, close to a single order.
+        val maxFree = when {
+            hard -> 1
+            breather || n <= 5 -> 99
+            n <= 15 -> 4
+            d < 0.5f -> 3
+            else -> 2
+        }
+        for (attempt in 0 until 120) {
             val rnd = Random(n * 7_919L + attempt * 104_729L + 3 + salt)
-            val built = build(n, d, rnd) ?: continue
+            val built = build(n, d, rnd, maxFree) ?: continue
             val waves = JamSolver.waves(built)
             if (waves < 0) continue
-            val minWaves = when {
-                n <= 3 -> 1
-                n <= 10 -> 2
-                else -> 2 + (d * 2).roundToInt()
-            }
-            if (waves < minWaves && attempt < 50) continue
+            // Relax the targets only if the generator keeps missing them.
+            if (attempt < 90 && JamSolver.freeAtStart(built) > maxFree) continue
+            if (attempt < 105 && waves < minWaves) continue
             val blocks = built.blocks.size
             // Tight but fair: ~3 s per block plus thinking time per wave, a bit less as levels get harder.
-            val raw = (6 + blocks * 2.8f + waves * 4) * (1.15f - 0.3f * d)
-            val time = ((raw / 5f).roundToInt() * 5).coerceIn(25, 120)
+            val raw = (6 + blocks * 2.8f + waves * 4) * (1.15f - 0.3f * d) * (if (hard) 1.15f else 1f)
+            val time = ((raw / 5f).roundToInt() * 5).coerceIn(25, 140)
             return JamLevel(n, built, time, waves)
         }
         // Fallback (practically never): a tiny trivial board.
@@ -68,7 +84,7 @@ object JamLevels {
         else -> MAX_COLORS
     }
 
-    private fun build(n: Int, d: Float, rnd: Random): JamBoard? {
+    private fun build(n: Int, d: Float, rnd: Random, maxFree: Int): JamBoard? {
         val (rows, cols) = sizeFor(n, rnd)
         val k = colorsFor(n)
         val colors = (1..MAX_COLORS).shuffled(rnd).take(k)
@@ -158,6 +174,39 @@ object JamLevels {
             if (cap >= 1) board.relocate(b.copy(ice = minOf(ice, cap)))
         }
         if (JamSolver.waves(board) < 0) return null
+
+        // Tighten: add blocks that cannot leave yet and that shut the way out of a block that could,
+        // so only a few moves are possible at any time (a narrow path, close to one order).
+        // Every addition is kept only if the level is still solvable.
+        var free = JamSolver.freeAtStart(board)
+        val maxCells = (0.86f * freeCells).roundToInt()
+        var tries = 0
+        while (free > maxFree && filled < maxCells && tries < 320) {
+            tries++
+            val color = colors[rnd.nextInt(colors.size)]
+            val colorGates = gates.filter { it.color == color }
+            val shapes = BlockShape.all.filter { s ->
+                s.size <= 3 && colorGates.any { g ->
+                    if (g.side == Side.TOP || g.side == Side.BOTTOM) s.cols <= g.length else s.rows <= g.length
+                }
+            }
+            if (shapes.isEmpty()) continue
+            val shape = shapes[rnd.nextInt(shapes.size)]
+            val r = rnd.nextInt(0, rows - shape.rows + 1)
+            val c = rnd.nextInt(0, cols - shape.cols + 1)
+            val b = Block(nextId, shape, color, r, c, Axis.BOTH)
+            if (!board.fits(b, r, c)) continue
+            if (board.findExit(b) != null) continue
+            board.relocate(b)
+            val f = JamSolver.freeAtStart(board)
+            if (f >= free || JamSolver.waves(board) < 0) {
+                board.remove(b.id)
+                continue
+            }
+            free = f
+            nextId++
+            filled += shape.size
+        }
         return board
     }
 
