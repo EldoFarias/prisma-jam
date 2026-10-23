@@ -286,7 +286,7 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
     val cols = vm.cols
     // Frame thickness is ~0.42 cell on each side (room for the gates).
     // Leave a margin around the board and keep cells moderate so pieces don't look oversized.
-    val cell = minOf((maxW - 24.dp) / (cols + 0.84f), maxH / (rows + 1.07f)).coerceAtMost(56.dp)
+    val cell = minOf((maxW - 12.dp) / (cols + 0.84f), maxH / (rows + 1.07f)).coerceAtMost(76.dp)
     val frame = cell * 0.42f
     val w = cell * cols + frame * 2
     val h = cell * rows + frame * 2
@@ -304,8 +304,8 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                 .graphicsLayer {
                     rotationX = BOARD_TILT
                     cameraDistance = 16f * density
-                    scaleX = 0.95f
-                    scaleY = 0.95f
+                    scaleX = 0.97f
+                    scaleY = 0.97f
                 }
                 .onGloballyPositioned { coords ->
                     val f = with(localDensity) { frame.toPx() }
