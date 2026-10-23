@@ -320,14 +320,14 @@ private fun ModeCard(
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
             Box(
                 Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(11.dp))
                     .background(Color(0x33FFFFFF)),
                 contentAlignment = Alignment.Center,
             ) { icon() }
             Column {
                 FitText(title, Styles.plain(17, Palette.TextPrimary, FontWeight.Black), minSp = 11f)
-                Text(subtitle, style = Styles.plain(13, Palette.TextSecondary, FontWeight.SemiBold), maxLines = 2)
+                FitText(subtitle, Styles.plain(13, Palette.TextSecondary, FontWeight.SemiBold), minSp = 10f)
             }
         }
         if (badge != null) {
@@ -352,7 +352,7 @@ private fun MapCard(modifier: Modifier, height: Dp, onClick: () -> Unit) {
         badge = if (Progress.totalStars > 0) "★ ${Progress.totalStars}" else null,
         onClick = onClick,
     ) {
-        Canvas(Modifier.size(30.dp)) {
+        Canvas(Modifier.size(26.dp)) {
             // Tiny map trail: three dots joined by a line.
             val w = size.width
             val pts = listOf(Offset(w * 0.2f, w * 0.8f), Offset(w * 0.5f, w * 0.45f), Offset(w * 0.8f, w * 0.2f))
@@ -393,9 +393,9 @@ private class HomeSizes(val logo: Dp, val title: Int, val subtitle: Int, val pla
 
 private fun homeSizes(width: Dp, height: Dp): HomeSizes = when {
     width >= 600.dp && height >= 700.dp -> HomeSizes(170.dp, 64, 32, 84.dp, 92.dp, 560.dp, 128.dp)
-    height < 560.dp -> HomeSizes(70.dp, 32, 18, 56.dp, 60.dp, 420.dp, 92.dp)
-    height < 640.dp -> HomeSizes(90.dp, 38, 20, 60.dp, 64.dp, 420.dp, 100.dp)
-    else -> HomeSizes(128.dp, 50, 26, 74.dp, 76.dp, 420.dp, 112.dp)
+    height < 560.dp -> HomeSizes(70.dp, 32, 18, 56.dp, 60.dp, 420.dp, 104.dp)
+    height < 640.dp -> HomeSizes(90.dp, 38, 20, 60.dp, 64.dp, 420.dp, 108.dp)
+    else -> HomeSizes(128.dp, 50, 26, 74.dp, 76.dp, 420.dp, 118.dp)
 }
 
 /** Logo: a little jam of jelly blocks heading for a glowing gate. */
