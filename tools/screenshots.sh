@@ -21,7 +21,7 @@ shot() { # name screen [level] [landscape|shatter]
   adb exec-out screencap -p > "shots/$1.png"
 }
 
-for cfg in "tiny 480x854 240" "small 720x1280 320" "phone 1080x2400 420" "tablet 1600x2560 320"; do
+for cfg in "phone 1080x2400 420" "tiny 480x854 240" "small 720x1280 320" "tablet 1600x2560 320"; do
   set -- $cfg
   name=$1
   adb shell wm size "$2"
