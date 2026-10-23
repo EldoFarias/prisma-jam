@@ -285,7 +285,8 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
     val rows = vm.rows
     val cols = vm.cols
     // Frame thickness is ~0.42 cell on each side (room for the gates).
-    val cell = minOf(maxW / (cols + 0.84f), maxH / (rows + 1.07f)).coerceAtMost(84.dp)
+    // Leave a margin around the board and keep cells moderate so pieces don't look oversized.
+    val cell = minOf((maxW - 24.dp) / (cols + 0.84f), maxH / (rows + 1.07f)).coerceAtMost(60.dp)
     val frame = cell * 0.42f
     val w = cell * cols + frame * 2
     val h = cell * rows + frame * 2
@@ -358,7 +359,7 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                         flash = maxOf(flash, 1f - ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f))
                     }
                 }
-                if (g.side != Side.BOTTOM) drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash)
+                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash, bar = g.side != Side.BOTTOM)
             }
             for (s in vm.stones) drawStone(s, o, c)
 
@@ -407,7 +408,7 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                         flash = maxOf(flash, 1f - ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f))
                     }
                 }
-                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash)
+                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash, spill = false)
             }
             drawShards(vm.shards, o, c)
         }

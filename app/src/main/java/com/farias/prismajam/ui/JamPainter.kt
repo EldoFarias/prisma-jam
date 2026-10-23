@@ -32,8 +32,8 @@ fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float): Path {
     val key = shapeId.toLong() * 100_000L + (cell * 10f).toLong()
     pathCache[key]?.let { return it }
     val set = cells.toHashSet()
-    val m = cell * 0.06f
-    val rad = cell * 0.24f
+    val m = cell * BLOCK_GAP
+    val rad = cell * 0.26f
     var merged = Path()
     for (c in cells) {
         val up = Cell(c.r - 1, c.c) in set
@@ -45,7 +45,7 @@ fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float): Path {
         val r = (c.c + 1) * cell - if (right) 0f else m
         val b = (c.r + 1) * cell - if (down) 0f else m
         fun corner(round: Boolean) = if (round) CornerRadius(rad) else CornerRadius.Zero
-        val piece = Path().apply {
+        var piece = Path().apply {
             addRoundRect(
                 RoundRect(
                     Rect(l, t, r, b),
@@ -56,6 +56,15 @@ fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float): Path {
                 )
             )
         }
+        // Inner (concave) corners: cut the little square that would stick out past the neighbours' edges.
+        val cuts = ArrayList<Rect>()
+        if (right && down && Cell(c.r + 1, c.c + 1) !in set) cuts.add(Rect(r - m, b - m, r, b))
+        if (left && down && Cell(c.r + 1, c.c - 1) !in set) cuts.add(Rect(l, b - m, l + m, b))
+        if (right && up && Cell(c.r - 1, c.c + 1) !in set) cuts.add(Rect(r - m, t, r, t + m))
+        if (left && up && Cell(c.r - 1, c.c - 1) !in set) cuts.add(Rect(l, t, l + m, t + m))
+        for (cut in cuts) {
+            piece = Path().apply { op(piece, Path().apply { addRect(cut) }, PathOperation.Difference) }
+        }
         merged = Path().apply { op(merged, piece, PathOperation.Union) }
     }
     if (pathCache.size > 400) pathCache.clear()
@@ -65,6 +74,9 @@ fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float): Path {
 
 /** Thickness of a block (its side wall), as a fraction of the cell. */
 const val BLOCK_DEPTH = 0.14f
+
+/** Gap between a block and the cell edge (so neighbouring blocks read as separate pieces). */
+const val BLOCK_GAP = 0.085f
 
 /**
  * A glossy 3D block: soft contact shadow, a darker side wall (thickness), a top face with a diagonal
@@ -134,10 +146,10 @@ private fun DrawScope.jelly(block: Block, cell: Float, baseColor: Color, alpha: 
             // Soft glossy band across the upper part of the face (smooth candy, no studs).
             drawRect(
                 Brush.verticalGradient(
-                    0f to Color.White.copy(alpha = 0.30f),
-                    0.45f to Color.White.copy(alpha = 0.10f),
-                    0.46f to Color.White.copy(alpha = 0f),
-                    startY = 0f, endY = (cell * 0.9f).coerceAtMost(h),
+                    0f to Color.White.copy(alpha = 0.32f),
+                    0.35f to Color.White.copy(alpha = 0.12f),
+                    1f to Color.White.copy(alpha = 0f),
+                    startY = 0f, endY = (cell * 0.75f).coerceAtMost(h),
                 ),
                 size = Size(w, h), alpha = alpha,
             )
@@ -351,44 +363,68 @@ fun DrawScope.drawShards(shards: List<com.farias.prismajam.game.Shard>, o: Offse
     }
 }
 
-/** A glowing gate on the board frame, with chevrons pointing out. */
-fun DrawScope.drawGate(gate: Gate, boardOrigin: Offset, cell: Float, rows: Int, cols: Int, frame: Float, color: Color, pulse: Float, flash: Float = 0f) {
-    val pad = cell * 0.08f
+/**
+ * A gate: a dark slot cut into the frame with a lit coloured bar inside and chevrons pointing out.
+ * Its light spills softly onto the board floor (no blurry halo).
+ */
+fun DrawScope.drawGate(
+    gate: Gate, boardOrigin: Offset, cell: Float, rows: Int, cols: Int, frame: Float, color: Color, pulse: Float,
+    flash: Float = 0f, spill: Boolean = true, bar: Boolean = true,
+) {
+    val pad = cell * 0.1f
+    val th = frame * 0.56f            // bar thickness
+    val inset = (frame - th) * 0.5f   // centred in the frame
+    val x0 = boardOrigin.x + gate.start * cell + pad
+    val x1 = boardOrigin.x + (gate.start + gate.length) * cell - pad
+    val y0 = boardOrigin.y + gate.start * cell + pad
+    val y1 = boardOrigin.y + (gate.start + gate.length) * cell - pad
+    val left = boardOrigin.x
+    val top = boardOrigin.y
+    val right = boardOrigin.x + cols * cell
+    val bottom = boardOrigin.y + rows * cell
     val rect = when (gate.side) {
-        Side.TOP -> Rect(boardOrigin.x + gate.start * cell + pad, boardOrigin.y - frame, boardOrigin.x + (gate.start + gate.length) * cell - pad, boardOrigin.y)
-        Side.BOTTOM -> Rect(boardOrigin.x + gate.start * cell + pad, boardOrigin.y + rows * cell, boardOrigin.x + (gate.start + gate.length) * cell - pad, boardOrigin.y + rows * cell + frame)
-        Side.LEFT -> Rect(boardOrigin.x - frame, boardOrigin.y + gate.start * cell + pad, boardOrigin.x, boardOrigin.y + (gate.start + gate.length) * cell - pad)
-        Side.RIGHT -> Rect(boardOrigin.x + cols * cell, boardOrigin.y + gate.start * cell + pad, boardOrigin.x + cols * cell + frame, boardOrigin.y + (gate.start + gate.length) * cell - pad)
+        Side.TOP -> Rect(x0, top - frame + inset, x1, top - inset)
+        Side.BOTTOM -> Rect(x0, bottom + inset, x1, bottom + frame - inset)
+        Side.LEFT -> Rect(left - frame + inset, y0, left - inset, y1)
+        Side.RIGHT -> Rect(right + inset, y0, right + frame - inset, y1)
     }
-    // Glow
-    drawRoundRect(
-        color.copy(alpha = 0.28f + 0.17f * pulse),
-        topLeft = Offset(rect.left - frame * 0.35f, rect.top - frame * 0.35f),
-        size = Size(rect.width + frame * 0.7f, rect.height + frame * 0.7f),
-        cornerRadius = CornerRadius(frame),
-    )
-    if (flash > 0f) {
-        drawRoundRect(
-            Color.White.copy(alpha = 0.55f * flash),
-            topLeft = Offset(rect.left - frame * 0.6f, rect.top - frame * 0.6f),
-            size = Size(rect.width + frame * 1.2f, rect.height + frame * 1.2f),
-            cornerRadius = CornerRadius(frame),
-        )
-    }
-    // Underside (thickness)
-    drawRoundRect(Palette.darker(color, 0.5f), Offset(rect.left, rect.top + frame * 0.16f), rect.size, CornerRadius(frame * 0.45f))
-    // Bar
     val horizontal = gate.side == Side.TOP || gate.side == Side.BOTTOM
+    val light = 0.16f + 0.10f * pulse + 0.35f * flash
+    // Light spilling onto the floor of the board, fading inwards.
+    val spillLen = cell * 0.55f
+    val (spillRect, spillBrush) = when (gate.side) {
+        Side.TOP -> Rect(x0, top, x1, top + spillLen) to Brush.verticalGradient(listOf(color.copy(alpha = light), Color.Transparent), top, top + spillLen)
+        Side.BOTTOM -> Rect(x0, bottom - spillLen, x1, bottom) to Brush.verticalGradient(listOf(Color.Transparent, color.copy(alpha = light)), bottom - spillLen, bottom)
+        Side.LEFT -> Rect(left, y0, left + spillLen, y1) to Brush.horizontalGradient(listOf(color.copy(alpha = light), Color.Transparent), left, left + spillLen)
+        Side.RIGHT -> Rect(right - spillLen, y0, right, y1) to Brush.horizontalGradient(listOf(Color.Transparent, color.copy(alpha = light)), right - spillLen, right)
+    }
+    if (spill) drawRect(spillBrush, spillRect.topLeft, spillRect.size)
+    if (!bar) return
+    // Slot cut into the frame
+    val cr = CornerRadius(th * 0.5f)
+    val slotPad = frame * 0.07f
     drawRoundRect(
-        if (horizontal) Brush.verticalGradient(listOf(Palette.lighter(color, 0.25f), Palette.darker(color, 0.15f)), rect.top, rect.bottom)
-        else Brush.horizontalGradient(listOf(Palette.lighter(color, 0.25f), Palette.darker(color, 0.15f)), rect.left, rect.right),
-        topLeft = rect.topLeft, size = rect.size, cornerRadius = CornerRadius(frame * 0.45f),
+        Color(0xFF0B0620),
+        Offset(rect.left - slotPad, rect.top - slotPad),
+        Size(rect.width + slotPad * 2, rect.height + slotPad * 2),
+        CornerRadius(th * 0.5f + slotPad),
     )
-    drawRoundRect(Color.White.copy(alpha = 0.35f), rect.topLeft, rect.size, CornerRadius(frame * 0.45f), style = Stroke(frame * 0.08f))
+    // Lit bar
+    drawRoundRect(
+        if (horizontal) Brush.verticalGradient(listOf(Palette.lighter(color, 0.35f), color, Palette.darker(color, 0.2f)), rect.top, rect.bottom)
+        else Brush.horizontalGradient(listOf(Palette.lighter(color, 0.35f), color, Palette.darker(color, 0.2f)), rect.left, rect.right),
+        rect.topLeft, rect.size, cr,
+    )
+    // Glass shine on the bar
+    drawRoundRect(
+        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0f)), rect.top, rect.top + rect.height * 0.6f),
+        rect.topLeft, rect.size, cr,
+    )
+    if (flash > 0f) drawRoundRect(Color.White.copy(alpha = 0.7f * flash), rect.topLeft, rect.size, cr)
     // Chevrons
-    val w = Color.White.copy(alpha = 0.85f)
-    val sw = frame * 0.12f
-    val a = frame * 0.22f
+    val w = Color.White.copy(alpha = 0.9f)
+    val sw = th * 0.16f
+    val a = th * 0.26f
     val count = gate.length
     for (i in 0 until count) {
         val t = (i + 0.5f) / count
