@@ -64,7 +64,7 @@ fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float): Path {
 }
 
 /** Thickness of a block (its side wall), as a fraction of the cell. */
-const val BLOCK_DEPTH = 0.17f
+const val BLOCK_DEPTH = 0.14f
 
 /**
  * A glossy 3D block: soft contact shadow, a darker side wall (thickness), a top face with a diagonal
@@ -131,21 +131,24 @@ private fun DrawScope.jelly(block: Block, cell: Float, baseColor: Color, alpha: 
             alpha = alpha,
         )
         clipPath(path) {
-            // Raised pillow on every cell
+            // Soft glossy band across the upper part of the face (smooth candy, no studs).
+            drawRect(
+                Brush.verticalGradient(
+                    0f to Color.White.copy(alpha = 0.30f),
+                    0.45f to Color.White.copy(alpha = 0.10f),
+                    0.46f to Color.White.copy(alpha = 0f),
+                    startY = 0f, endY = (cell * 0.9f).coerceAtMost(h),
+                ),
+                size = Size(w, h), alpha = alpha,
+            )
+            // Faint seams between the cells give a sense of scale on big blocks.
             for (c in shape.cells) {
                 val cx = (c.c + 0.5f) * cell
                 val cy = (c.r + 0.5f) * cell
-                val s = cell * 0.6f
-                val tl = Offset(cx - s / 2f, cy - s / 2f)
-                val cr = CornerRadius(s * 0.32f)
-                drawRoundRect(Palette.darker(color, 0.35f).copy(alpha = 0.45f * alpha), tl + Offset(0f, cell * 0.045f), Size(s, s), cr)
-                drawRoundRect(
-                    Brush.verticalGradient(listOf(Palette.lighter(color, 0.24f), Palette.darker(color, 0.04f)), tl.y, tl.y + s),
-                    tl, Size(s, s), cr, alpha = alpha,
-                )
-                drawRoundRect(
-                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0f)), tl.y, tl.y + s * 0.5f),
-                    tl, Size(s, s), cr, style = Stroke(cell * 0.025f), alpha = alpha,
+                val rr = (cell * 0.42f).coerceAtLeast(1f)
+                drawCircle(
+                    Brush.radialGradient(listOf(Color.White.copy(alpha = 0.10f), Color.White.copy(alpha = 0f)), Offset(cx, cy - cell * 0.08f), rr),
+                    rr, Offset(cx, cy - cell * 0.08f), alpha = alpha,
                 )
             }
             // Inner bevel: light on the upper rim, dark on the lower rim.

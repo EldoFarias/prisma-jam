@@ -107,9 +107,14 @@ object JamLevels {
         var filled = 0
         var nextId = 1
         var guard = 0
+        val cellsOf = HashMap<Int, Int>()
         while (filled < targetFill && guard < 900) {
             guard++
-            val color = colors[rnd.nextInt(colors.size)]
+            // Keep the colors balanced: usually pick the color with the fewest cells so far.
+            val color = if (rnd.nextFloat() < 0.75f) {
+                val least = colors.minOf { cellsOf[it] ?: 0 }
+                colors.filter { (cellsOf[it] ?: 0) == least }.let { it[rnd.nextInt(it.size)] }
+            } else colors[rnd.nextInt(colors.size)]
             val colorGates = gates.filter { it.color == color }
             val shapes = BlockShape.all.filter { s ->
                 colorGates.any { g ->
@@ -133,6 +138,7 @@ object JamLevels {
             if (n >= 12 && rnd.nextFloat() < 0.07f + 0.10f * d) wantIce.add(nextId to rnd.nextInt(2, 4 + (d * 3).roundToInt()))
             nextId++
             filled += shape.size
+            cellsOf[color] = (cellsOf[color] ?: 0) + shape.size
         }
         if (board.blocks.size < 2) return null
         // Ice: block #i is removed after (count - i) others in the reverse order, so cap it there.

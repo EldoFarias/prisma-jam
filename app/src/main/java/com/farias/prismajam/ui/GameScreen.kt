@@ -302,9 +302,9 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                 // A gentle 3D tilt: the board lies on a table, the far edge leaning away.
                 .graphicsLayer {
                     rotationX = BOARD_TILT
-                    cameraDistance = 7f * density
-                    scaleX = 0.94f
-                    scaleY = 0.94f
+                    cameraDistance = 16f * density
+                    scaleX = 0.95f
+                    scaleY = 0.95f
                 }
                 .onGloballyPositioned { coords ->
                     val f = with(localDensity) { frame.toPx() }
@@ -358,7 +358,7 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                         flash = maxOf(flash, 1f - ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f))
                     }
                 }
-                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash)
+                if (g.side != Side.BOTTOM) drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash)
             }
             for (s in vm.stones) drawStone(s, o, c)
 
@@ -397,6 +397,17 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                         ),
                     )
                 }
+            }
+            // The front gates sit in front of the blocks (nearer the player).
+            for (g in vm.gates) {
+                if (g.side != Side.BOTTOM) continue
+                var flash = 0f
+                for (e in vm.exits) {
+                    if (e.side == g.side && e.block.color == g.color) {
+                        flash = maxOf(flash, 1f - ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f))
+                    }
+                }
+                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash)
             }
             drawShards(vm.shards, o, c)
         }
@@ -590,4 +601,4 @@ private fun FloatingTextItem(t: FloatText, fx: Fx) {
 }
 
 /** Degrees the board leans back (3D look). */
-private const val BOARD_TILT = 18f
+private const val BOARD_TILT = 12f
