@@ -140,11 +140,16 @@ fun GameScreen(vm: GameViewModel, ads: AdsManager, onGreatMoment: () -> Unit, on
                     }
                 }
                 Board(vm, boardW, boardH) { b -> pay(Power.HAMMER) { vm.smash(b) } }
-                Scaled(ui) {
-                    PowerBar(vm, compact) { p ->
-                        when (p) {
-                            Power.FREEZE -> pay(p) { vm.freeze() }
-                            Power.HAMMER -> vm.hammerMode = !vm.hammerMode
+                // Level 1 tutorial: the hint sits where the powers are, so hide them until the first block leaves.
+                if (!Progress.tutorialDone && vm.level?.number == 1) {
+                    Spacer(Modifier.height(powerH))
+                } else {
+                    Scaled(ui) {
+                        PowerBar(vm, compact) { p ->
+                            when (p) {
+                                Power.FREEZE -> pay(p) { vm.freeze() }
+                                Power.HAMMER -> vm.hammerMode = !vm.hammerMode
+                            }
                         }
                     }
                 }

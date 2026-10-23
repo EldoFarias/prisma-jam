@@ -52,6 +52,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var screen by remember { mutableStateOf(initial) }
+            // Tablets: draw the whole app bigger so it fills the screen like on a phone.
+            val sw = androidx.compose.ui.platform.LocalConfiguration.current.smallestScreenWidthDp
+            val appScale = if (sw >= 600) (sw / 420f).coerceIn(1f, 1.6f) else 1f
+            com.farias.prismajam.ui.Scaled(appScale) {
             Crossfade(targetState = screen, animationSpec = tween(350), label = "screen") { current ->
                 when (current) {
                     Screen.SPLASH -> SplashScreen(sound) { screen = Screen.HOME }
@@ -76,6 +80,7 @@ class MainActivity : ComponentActivity() {
                     Screen.THEMES -> ThemesScreen(sound) { screen = Screen.HOME }
                     Screen.STATS -> StatsScreen { screen = Screen.HOME }
                 }
+            }
             }
         }
     }
