@@ -126,6 +126,25 @@ class JamBoard(
             Side.RIGHT -> block.c + block.shape.cols == cols
         }
         if (!touching) return null
+        // The whole piece slides out: every square needs a clear lane from where it is to the edge
+        // (an arm of an L or T must not pass through another block or a stone).
+        val (dr, dc) = when (side) {
+            Side.TOP -> -1 to 0
+            Side.BOTTOM -> 1 to 0
+            Side.LEFT -> 0 to -1
+            Side.RIGHT -> 0 to 1
+        }
+        for (cell in block.cells()) {
+            var r = cell.r + dr
+            var c = cell.c + dc
+            while (r in 0 until rows && c in 0 until cols) {
+                if (Cell(r, c) in stones) return null
+                val other = blockAt(r, c)
+                if (other != null && other.id != block.id) return null
+                r += dr
+                c += dc
+            }
+        }
         val (from, to) = when (side) {
             Side.TOP, Side.BOTTOM -> block.c to block.c + block.shape.cols - 1
             Side.LEFT, Side.RIGHT -> block.r to block.r + block.shape.rows - 1
