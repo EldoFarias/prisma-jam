@@ -276,7 +276,7 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
     val rows = vm.rows
     val cols = vm.cols
     // Frame thickness is ~0.42 cell on each side (room for the gates).
-    val cell = minOf(maxW / (cols + 0.84f), maxH / (rows + 0.84f)).coerceAtMost(84.dp)
+    val cell = minOf(maxW / (cols + 0.84f), maxH / (rows + 1.07f)).coerceAtMost(84.dp)
     val frame = cell * 0.42f
     val w = cell * cols + frame * 2
     val h = cell * rows + frame * 2
@@ -284,26 +284,33 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
     val transition = rememberInfiniteTransition(label = "gates")
     val pulseT by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Reverse), label = "g")
 
+    val slab = frame * 0.55f
     Box(Modifier.height(maxH), contentAlignment = Alignment.Center) {
         Canvas(
             Modifier
-                .size(w, h)
+                .size(w, h + slab)
+                // A gentle 3D tilt: the board lies on a table, the far edge leaning away.
+                .graphicsLayer {
+                    rotationX = BOARD_TILT
+                    cameraDistance = 7f * density
+                    scaleX = 0.94f
+                    scaleY = 0.94f
+                }
                 .onGloballyPositioned { coords ->
-                    val b = coords.boundsInRoot()
-                    val f = b.width * (0.42f / (cols + 0.84f))
-                    vm.cellPx = (b.width - 2 * f) / cols
-                    vm.boardOrigin = Offset(b.left + f, b.top + f)
+                    val f = frame.toPx()
+                    vm.cellPx = cell.toPx()
+                    vm.boardOrigin = Offset(f, f)
+                    vm.toRoot = { p -> if (coords.isAttached) coords.localToRoot(p) else p }
                 }
                 .pointerInput(vm.hammerMode, vm.level?.number) {
+                    // Pointer positions arrive in the board's own (untilted) space.
                     awaitEachGesture {
                         val down = awaitFirstDown()
-                        val origin = vm.boardOrigin - Offset(frame.toPx(), frame.toPx())
-                        val rootDown = origin + down.position
                         if (vm.hammerMode) {
-                            vm.hammerTarget(rootDown)?.let { onHammer(it) } ?: vm.playInvalid()
+                            vm.hammerTarget(down.position)?.let { onHammer(it) } ?: vm.playInvalid()
                             return@awaitEachGesture
                         }
-                        vm.touchDown(rootDown)
+                        vm.touchDown(down.position)
                         if (vm.dragging < 0) return@awaitEachGesture
                         down.consume()
                         try {
@@ -311,7 +318,7 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                                 val event = awaitPointerEvent()
                                 val change = event.changes.firstOrNull { it.id == down.id } ?: break
                                 if (!change.pressed) break
-                                vm.touchMove(origin + change.position)
+                                vm.touchMove(change.position)
                                 change.consume()
                                 if (vm.dragging < 0) break
                             }
@@ -328,53 +335,37 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
             val f = frame.toPx()
             val o = Offset(f, f)
 
-            // Frame + board glass
-            drawRoundRect(Color(0x26FFFFFF), cornerRadius = CornerRadius(f * 1.4f))
-            drawRoundRect(
-                if (vm.hammerMode) Palette.Danger.copy(alpha = 0.5f + 0.4f * pulseT) else Palette.GlassBorder,
-                cornerRadius = CornerRadius(f * 1.4f),
-                style = Stroke(if (vm.hammerMode) 3.dp.toPx() else 1.dp.toPx()),
+            drawBoardBase(
+                o, c, rows, cols, f, slab.toPx(),
+                if (vm.hammerMode) Palette.Danger.copy(alpha = 0.5f + 0.4f * pulseT) else null,
             )
-            drawRoundRect(Color(0x55000000), topLeft = o, size = Size(c * cols, c * rows), cornerRadius = CornerRadius(c * 0.22f))
 
-            // Gates
+            // Gates (flash when a block goes through)
             for (g in vm.gates) {
-                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT)
-            }
-            // Empty cells
-            for (r in 0 until rows) for (col in 0 until cols) {
-                val m = c * 0.06f
-                drawRoundRect(
-                    Color(0x12FFFFFF),
-                    topLeft = Offset(o.x + col * c + m, o.y + r * c + m),
-                    size = Size(c - 2 * m, c - 2 * m),
-                    cornerRadius = CornerRadius(c * 0.18f),
-                )
+                var flash = 0f
+                for (e in vm.exits) {
+                    if (e.side == g.side && e.block.color == g.color) {
+                        flash = maxOf(flash, 1f - ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f))
+                    }
+                }
+                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash)
             }
             for (s in vm.stones) drawStone(s, o, c)
 
-            // Blocks leaving through gates: slide out and fade, clipped to the frame.
-            clipRect(0f, 0f, size.width, size.height) {
-                for (e in vm.exits) {
-                    val t = ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f)
-                    val dist = (if (e.side == Side.TOP || e.side == Side.BOTTOM) e.block.shape.rows else e.block.shape.cols) + 0.6f
-                    val d = dist * t * t
-                    val (dx, dy) = when (e.side) {
-                        Side.TOP -> 0f to -d
-                        Side.BOTTOM -> 0f to d
-                        Side.LEFT -> -d to 0f
-                        Side.RIGHT -> d to 0f
-                    }
-                    drawJellyBlock(
-                        e.block,
-                        Offset(o.x + (e.block.c + dx) * c, o.y + (e.block.r + dy) * c),
-                        c, Palette.block(e.block.color), alpha = 1f - t,
-                    )
-                }
+            // Block that just left: a quick white flash and swell where it was, while its shards fly.
+            for (e in vm.exits) {
+                val t = ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f)
+                drawJellyBlock(
+                    e.block,
+                    Offset(o.x + e.block.c * c, o.y + e.block.r * c),
+                    c, Palette.block(e.block.color),
+                    alpha = (1f - t) * (1f - t), whiten = 0.8f, scale = 1f + 0.18f * t,
+                )
             }
 
             // Blocks (the dragged one last, on top)
-            val list = vm.blocks.sortedBy { if (it.id == vm.dragging) 1 else 0 }
+            // Back to front so each block covers the side wall of the one behind it; the dragged one on top.
+            val list = vm.blocks.sortedWith(compareBy({ if (it.id == vm.dragging) 1 else 0 }, { it.r + it.shape.rows }))
             val overT = if (vm.timeUp) 1f else 0f
             for (b in list) {
                 val v = vm.visual[b.id] ?: Offset(b.c.toFloat(), b.r.toFloat())
@@ -397,6 +388,7 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                     )
                 }
             }
+            drawShards(vm.shards, o, c)
         }
     }
 }
@@ -507,11 +499,8 @@ private fun TutorialLayer(vm: GameViewModel) {
         // Pick a block that can leave right away and show the way to its gate.
         val target = vm.tutorialTarget() ?: return@Canvas
         val (block, gateCenterCells) = target
-        val from = Offset(
-            vm.boardOrigin.x + (block.c + block.shape.cols / 2f) * vm.cellPx,
-            vm.boardOrigin.y + (block.r + block.shape.rows / 2f) * vm.cellPx,
-        )
-        val to = Offset(vm.boardOrigin.x + gateCenterCells.x * vm.cellPx, vm.boardOrigin.y + gateCenterCells.y * vm.cellPx)
+        val from = vm.screenAt(Offset(block.c + block.shape.cols / 2f, block.r + block.shape.rows / 2f))
+        val to = vm.screenAt(gateCenterCells)
         val move = ((t - 0.15f) / 0.6f).coerceIn(0f, 1f)
         val e = move * move * (3f - 2f * move)
         val pos = Offset(from.x + (to.x - from.x) * e, from.y + (to.y - from.y) * e)
@@ -530,7 +519,7 @@ private fun HintPill(text: String, vm: GameViewModel) {
             layout(constraints.maxWidth, constraints.maxHeight) {
                 vm.fx.frame.longValue
                 val x = (constraints.maxWidth - placeable.width) / 2
-                val y = (vm.boardOrigin.y + vm.cellPx * vm.rows + 24.dp.toPx()).roundToInt()
+                val y = (vm.screenAt(Offset(0f, vm.rows + 0.6f)).y + 16.dp.toPx()).roundToInt()
                 placeable.place(x, y)
             }
         },
@@ -589,3 +578,6 @@ private fun FloatingTextItem(t: FloatText, fx: Fx) {
         )
     }
 }
+
+/** Degrees the board leans back (3D look). */
+private const val BOARD_TILT = 18f

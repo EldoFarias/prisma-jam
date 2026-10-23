@@ -33,12 +33,13 @@ object JamLevels {
             }
             if (waves < minWaves && attempt < 50) continue
             val blocks = built.blocks.size
-            val raw = (20 + blocks * 5 + waves * 6) * (1.25f - 0.35f * d)
-            val time = ((raw / 5f).roundToInt() * 5).coerceIn(30, 180)
+            // Tight but fair: ~3 s per block plus thinking time per wave, a bit less as levels get harder.
+            val raw = (6 + blocks * 2.8f + waves * 4) * (1.15f - 0.3f * d)
+            val time = ((raw / 5f).roundToInt() * 5).coerceIn(25, 120)
             return JamLevel(n, built, time, waves)
         }
         // Fallback (practically never): a tiny trivial board.
-        return JamLevel(n, fallback(), 60, 1)
+        return JamLevel(n, fallback(), 40, 1)
     }
 
     private fun sizeFor(n: Int, rnd: Random): Pair<Int, Int> = when {

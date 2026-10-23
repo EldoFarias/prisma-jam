@@ -31,6 +31,22 @@ enum class Power(val cost: Int) { FREEZE(40), HAMMER(50) }
 /** A block sliding out through a gate (drawn for a short moment after it left the board). */
 class ExitAnim(val block: Block, val side: Side, val start: Long)
 
+/** A flying fragment of a shattered block. Positions are in board cells; [pts] are vertices around (x, y). */
+class Shard(
+    var x: Float,
+    var y: Float,
+    var vx: Float,
+    var vy: Float,
+    var rot: Float,
+    val vrot: Float,
+    val pts: FloatArray,
+    val color: Color,
+    val shade: Float,
+    var life: Float,
+    val maxLife: Float,
+    val gravity: Float,
+)
+
 class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
@@ -83,9 +99,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     val finished: Boolean get() = won || timeUp
 
-    // ------------------------------------------------------------- geometry (root px), set by the UI
+    // ------------------------------------------------------------- geometry, set by the UI
+    /** Top-left of cell (0,0) and cell size, in the board's own (untilted) px. Touches arrive in the same space. */
     var boardOrigin = Offset.Zero
     var cellPx = 1f
+    /** Maps a point in the board's px to screen (root) px, through the 3D tilt. */
+    var toRoot: (Offset) -> Offset = { it }
+
+    /** Screen position of a point given in cells (e.g. 2.5, 3.5 = centre of cell r3 c2). */
+    fun screenAt(cells: Offset): Offset = toRoot(boardOrigin + cells * cellPx)
+
+    /** Approximate size of one cell on screen. */
+    val screenCell: Float
+        get() = (screenAt(Offset(1f, 0f)) - screenAt(Offset.Zero)).getDistance().coerceAtLeast(1f)
+
+    val shards = ArrayList<Shard>()
+    private val rng = java.util.Random()
 
     /** Smoothly animated top-left (in cells) per block id, updated every frame. */
     val visual = HashMap<Int, Offset>()
@@ -119,6 +148,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         dragging = -1
         visual.clear()
         exits.clear()
+        shards.clear()
         fx.particles.clear()
         sync()
         for (b in blocks) visual[b.id] = Offset(b.c.toFloat(), b.r.toFloat())
@@ -153,6 +183,73 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             visual[b.id] = cur + (target - cur) * k
         }
         if (exits.isNotEmpty()) exits.removeAll { frameNanos - it.start > EXIT_NANOS }
+        if (shards.isNotEmpty()) {
+            val drag = 1f - (dt * 1.6f).coerceAtMost(0.5f)
+            val it = shards.iterator()
+            while (it.hasNext()) {
+                val s = it.next()
+                s.life -= dt
+                if (s.life <= 0f) { it.remove(); continue }
+                s.vy += s.gravity * dt
+                s.vx *= drag
+                s.vy *= drag
+                s.x += s.vx * dt
+                s.y += s.vy * dt
+                s.rot += s.vrot * dt
+            }
+        }
+    }
+
+    /**
+     * Breaks a block into triangular shards. [dir] is the main flight direction in cells/s (towards the gate),
+     * or zero for an explosion in all directions.
+     */
+    private fun shatter(b: Block, dir: Offset, gravity: Float) {
+        val color = Palette.block(b.color)
+        val cells = b.cells()
+        val cx = cells.map { it.c + 0.5f }.average().toFloat()
+        val cy = cells.map { it.r + 0.5f }.average().toFloat()
+        fun j() = (rng.nextFloat() - 0.5f) * 0.22f
+        for (cell in cells) {
+            val m = 0.06f
+            val x0 = cell.c + m
+            val y0 = cell.r + m
+            val x1 = cell.c + 1 - m
+            val y1 = cell.r + 1 - m
+            val mid = Offset(cell.c + 0.5f + j(), cell.r + 0.5f + j())
+            // Ring of points around the cell: corners and jittered edge midpoints.
+            val ring = listOf(
+                Offset(x0, y0), Offset((x0 + x1) / 2 + j(), y0), Offset(x1, y0), Offset(x1, (y0 + y1) / 2 + j()),
+                Offset(x1, y1), Offset((x0 + x1) / 2 + j(), y1), Offset(x0, y1), Offset(x0, (y0 + y1) / 2 + j()),
+            )
+            for (i in ring.indices) {
+                val a = ring[i]
+                val bb = ring[(i + 1) % ring.size]
+                val g = Offset((mid.x + a.x + bb.x) / 3f, (mid.y + a.y + bb.y) / 3f)
+                val pts = floatArrayOf(mid.x - g.x, mid.y - g.y, a.x - g.x, a.y - g.y, bb.x - g.x, bb.y - g.y)
+                val out = Offset(g.x - cx, g.y - cy)
+                val speed = 0.6f + rng.nextFloat() * 0.8f
+                val vx: Float
+                val vy: Float
+                if (dir == Offset.Zero) {
+                    val len = out.getDistance().coerceAtLeast(0.2f)
+                    val sp = 4f + rng.nextFloat() * 6f
+                    vx = out.x / len * sp + (rng.nextFloat() - 0.5f) * 3f
+                    vy = out.y / len * sp - 3f + (rng.nextFloat() - 0.5f) * 3f
+                } else {
+                    vx = dir.x * speed + out.x * 2.5f + (rng.nextFloat() - 0.5f) * 3.5f
+                    vy = dir.y * speed + out.y * 2.5f + (rng.nextFloat() - 0.5f) * 3.5f
+                }
+                val life = 0.55f + rng.nextFloat() * 0.4f
+                shards.add(
+                    Shard(
+                        g.x, g.y, vx, vy, 0f, (rng.nextFloat() - 0.5f) * 14f, pts, color,
+                        shade = rng.nextFloat(), life = life, maxLife = life, gravity = gravity,
+                    )
+                )
+            }
+        }
+        if (shards.size > 900) shards.subList(0, shards.size - 900).clear()
     }
 
     // ------------------------------------------------------------- input
@@ -241,12 +338,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         exits.add(ExitAnim(b, side, fx.now))
         visual.remove(b.id)
         val color = Palette.block(b.color)
-        // Sparks along the gate.
-        val cells = b.cells()
-        for (cell in cells) {
-            val center = Offset(boardOrigin.x + (cell.c + 0.5f) * cellPx, boardOrigin.y + (cell.r + 0.5f) * cellPx)
-            fx.burst(center, color, cellPx * 0.6f, 5)
+        // The block bursts into shards that fly out through the gate, plus sparks.
+        val dir = when (side) {
+            Side.TOP -> Offset(0f, -9f)
+            Side.BOTTOM -> Offset(0f, 9f)
+            Side.LEFT -> Offset(-9f, 0f)
+            Side.RIGHT -> Offset(9f, 0f)
         }
+        shatter(b, dir, gravity = 6f)
+        val sc = screenCell
+        for (cell in b.cells()) {
+            fx.burst(screenAt(Offset(cell.c + 0.5f, cell.r + 0.5f)), color, sc * 0.5f, 3)
+        }
+        fx.shake(sc * 0.08f)
         val big = b.shape.size >= 4
         sound.play(Sfx.CLEAR, 0.9f, 0.9f + 0.05f * (totalBlocks - board.blocks.size).coerceAtMost(8))
         vibrate(if (big) Haptic.COMBO else Haptic.CLEAR)
@@ -287,11 +391,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         hammerMode = false
         visual.remove(b.id)
         val color = Palette.block(b.color)
+        shatter(b, Offset.Zero, gravity = 16f)
+        val sc = screenCell
         for (cell in b.cells()) {
-            val center = Offset(boardOrigin.x + (cell.c + 0.5f) * cellPx, boardOrigin.y + (cell.r + 0.5f) * cellPx)
-            fx.burst(center, color, cellPx, 9)
+            fx.burst(screenAt(Offset(cell.c + 0.5f, cell.r + 0.5f)), color, sc, 6)
         }
-        fx.shake(cellPx * 0.25f)
+        fx.shake(sc * 0.25f)
         sound.play(Sfx.BOMB)
         vibrate(Haptic.HEAVY)
         Progress.onBlockCleared()
@@ -315,11 +420,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         coinsEarned = (10 + lv.number / 4).coerceAtMost(35) + if (timeLeft >= timeTotal * 0.5f) 10 else 0
         Progress.addCoins(coinsEarned)
         missionEvent(MissionType.LEVELS, 1)
-        if (timeLeft >= FAST_WIN_SECONDS) missionEvent(MissionType.FAST_WINS, 1)
+        if (timeLeft >= timeTotal * 0.4f) missionEvent(MissionType.FAST_WINS, 1)
         missionEvent(MissionType.STREAK, Progress.winStreak, asMax = true)
         // Confetti
-        val center = Offset(boardOrigin.x + cellPx * board.cols / 2f, boardOrigin.y + cellPx * board.rows / 2f)
-        for (i in 1..7) fx.burst(center, Palette.block(i), cellPx * 1.4f, 10)
+        val center = screenAt(Offset(board.cols / 2f, board.rows / 2f))
+        for (i in 1..7) fx.burst(center, Palette.block(i), screenCell * 1.4f, 10)
         fx.text(getApplication<Application>().getString(R.string.level_complete), center, Palette.Gold, big = true, delayMs = 100)
         sound.play(Sfx.RECORD)
         vibrate(Haptic.HEAVY)
@@ -384,7 +489,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         if (done.isEmpty()) return
         fx.text(
             getApplication<Application>().getString(R.string.mission_done),
-            Offset(boardOrigin.x + cellPx * board.cols / 2f, boardOrigin.y - cellPx * 0.7f),
+            screenAt(Offset(board.cols / 2f, -0.7f)),
             Color(0xFF34D399), big = false, delayMs = 400,
         )
         sound.play(Sfx.COIN, 0.8f, 0.9f)
@@ -404,11 +509,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
-        const val EXIT_NANOS = 420_000_000L
+        const val EXIT_NANOS = 260_000_000L
         const val EXIT_PUSH = 0.35f
         const val LEAN = 0.3f
         const val FREEZE_SECONDS = 10f
         const val EXTRA_SECONDS = 30f
-        const val FAST_WIN_SECONDS = 30f
     }
 }

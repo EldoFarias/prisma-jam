@@ -47,7 +47,8 @@ adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
 - Textos em 8 idiomas (`values` en, `pt`, `es`, `fr`, `de`, `tr`, `in`, `hi`): editar `tools/strings.py` e rodar
   `python3 tools/strings.py app/src/main/res`.
 - Gradientes radiais com raio 0 derrubam o app: proteger tamanhos < 1 px.
-- Telas se adaptam: compacto, tablet (escala 1.25) e deitado. `android:appCategory="game"` mantém retrato no Android 16.
+- Telas se adaptam: compacto e deitado; em tablet o app inteiro é desenhado maior (`Scaled` no MainActivity).
+- Tabuleiro inclinado em 3D (`graphicsLayer rotationX`): toques chegam no espaço do tabuleiro; efeitos na tela usam `vm.screenAt()`. `android:appCategory="game"` mantém retrato no Android 16.
 
 ## Pendências
 
