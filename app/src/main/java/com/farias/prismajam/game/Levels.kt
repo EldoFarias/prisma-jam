@@ -18,11 +18,17 @@ class JamLevel(
 object JamLevels {
     const val MAX_COLORS = 7
 
-    fun level(number: Int): JamLevel {
+    /**
+     * Today's challenge: a mid/hard level that is the same for everyone on [day] (yyyyMMdd)
+     * but different from the regular levels.
+     */
+    fun daily(day: Int): JamLevel = level(30 + (day % 37) * 2, salt = day * 2_654_435_761L)
+
+    fun level(number: Int, salt: Long = 0L): JamLevel {
         val n = number.coerceAtLeast(1)
         val d = ((n - 1) / 80f).coerceIn(0f, 1f)
         for (attempt in 0 until 60) {
-            val rnd = Random(n * 7_919L + attempt * 104_729L + 3)
+            val rnd = Random(n * 7_919L + attempt * 104_729L + 3 + salt)
             val built = build(n, d, rnd) ?: continue
             val waves = JamSolver.waves(built)
             if (waves < 0) continue

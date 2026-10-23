@@ -27,7 +27,7 @@ import com.farias.prismajam.ui.StatsScreen
 import com.farias.prismajam.ui.ThemesScreen
 import com.farias.prismajam.ui.skipChestToday
 
-enum class Screen { SPLASH, HOME, GAME, THEMES, STATS }
+enum class Screen { SPLASH, HOME, GAME, THEMES, STATS, MAP }
 
 class MainActivity : ComponentActivity() {
 
@@ -70,6 +70,13 @@ class MainActivity : ComponentActivity() {
                         },
                         onThemes = { screen = Screen.THEMES },
                         onStats = { screen = Screen.STATS },
+                        onMap = { screen = Screen.MAP },
+                        onDaily = {
+                            ads.onNewGame {
+                                vm.startDaily()
+                                screen = Screen.GAME
+                            }
+                        },
                     )
                     Screen.GAME -> GameScreen(
                         vm = vm,
@@ -79,6 +86,15 @@ class MainActivity : ComponentActivity() {
                     )
                     Screen.THEMES -> ThemesScreen(sound) { screen = Screen.HOME }
                     Screen.STATS -> StatsScreen { screen = Screen.HOME }
+                    Screen.MAP -> com.farias.prismajam.ui.MapScreen(
+                        onBack = { screen = Screen.HOME },
+                        onPlay = { n ->
+                            ads.onNewGame {
+                                vm.startLevel(n)
+                                screen = Screen.GAME
+                            }
+                        },
+                    )
                 }
             }
             }
@@ -102,6 +118,11 @@ class MainActivity : ComponentActivity() {
                 vm.debugShatterLoop = intent.getBooleanExtra("shatter", false)
                 Screen.GAME
             }
+            "daily" -> {
+                vm.startDaily()
+                Screen.GAME
+            }
+            "map" -> Screen.MAP
             "themes" -> Screen.THEMES
             "stats" -> Screen.STATS
             else -> Screen.HOME

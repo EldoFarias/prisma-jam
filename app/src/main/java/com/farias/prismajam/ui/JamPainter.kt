@@ -330,19 +330,20 @@ fun DrawScope.drawBoardBase(o: Offset, cell: Float, rows: Int, cols: Int, frame:
     }
 }
 
-/** Flying fragments of shattered blocks, drawn in the board's space. */
+/** Flying fragments of shattered blocks, drawn in the board's space: glossy glass-like pieces of three sizes. */
 fun DrawScope.drawShards(shards: List<com.farias.prismajam.game.Shard>, o: Offset, cell: Float) {
     if (cell < 2f) return
     val path = Path()
     val wall = Path()
     for (s in shards) {
         val t = s.life / s.maxLife
-        val alpha = (t / 0.45f).coerceAtMost(1f)
-        val k = cell * (0.55f + 0.45f * t)
+        val alpha = (t / 0.35f).coerceAtMost(1f)
+        val k = cell * (0.45f + 0.55f * t)
         val cos = kotlin.math.cos(s.rot)
         val sin = kotlin.math.sin(s.rot)
         val cx = o.x + s.x * cell
         val cy = o.y + s.y * cell
+        val thick = when (s.kind) { 2 -> cell * 0.12f; 1 -> cell * 0.07f; else -> 0f } * (0.5f + 0.5f * t)
         path.reset()
         wall.reset()
         var i = 0
@@ -351,16 +352,52 @@ fun DrawScope.drawShards(shards: List<com.farias.prismajam.game.Shard>, o: Offse
             val py = s.pts[i + 1] * k
             val x = cx + px * cos - py * sin
             val y = cy + px * sin + py * cos
-            if (i == 0) { path.moveTo(x, y); wall.moveTo(x, y + cell * 0.1f) } else { path.lineTo(x, y); wall.lineTo(x, y + cell * 0.1f) }
+            if (i == 0) { path.moveTo(x, y); wall.moveTo(x, y + thick) } else { path.lineTo(x, y); wall.lineTo(x, y + thick) }
             i += 2
         }
         path.close()
         wall.close()
-        drawPath(wall, Palette.darker(s.color, 0.5f).copy(alpha = alpha))
-        val face = if (s.shade > 0.5f) Palette.lighter(s.color, 0.1f + 0.35f * (s.shade - 0.5f)) else Palette.darker(s.color, 0.2f * (0.5f - s.shade))
+        if (thick > 0f) drawPath(wall, Palette.darker(s.color, 0.45f).copy(alpha = alpha))
+        // Each facet catches the light differently as it spins.
+        val light = 0.5f + 0.5f * kotlin.math.sin(s.rot * 1.7f + s.shade * 6f)
+        val face = lerp(Palette.darker(s.color, 0.12f), Palette.lighter(s.color, 0.55f), light)
         drawPath(path, face.copy(alpha = alpha))
-        drawPath(path, Color.White.copy(alpha = 0.45f * alpha), style = Stroke(cell * 0.02f))
+        if (s.kind > 0) {
+            drawPath(path, Color.White.copy(alpha = (0.25f + 0.45f * light) * alpha), style = Stroke(cell * 0.022f))
+        }
     }
+}
+
+/** Twinkling 4-point glitter stars. */
+fun DrawScope.drawSparkles(list: List<com.farias.prismajam.game.Sparkle>, o: Offset, cell: Float, time: Float) {
+    if (cell < 2f) return
+    for (p in list) {
+        val t = p.life / p.maxLife
+        val tw = 0.55f + 0.45f * kotlin.math.sin(time * 18f + p.phase)
+        val a = (t / 0.4f).coerceAtMost(1f) * tw
+        val r = p.size * cell * (0.6f + 0.4f * t)
+        val c = Offset(o.x + p.x * cell, o.y + p.y * cell)
+        if (r < 0.5f) continue
+        drawCircle(p.color.copy(alpha = 0.25f * a), r * 1.6f, c)
+        val sw = (r * 0.28f).coerceAtLeast(1f)
+        drawLine(p.color.copy(alpha = a), Offset(c.x - r * 1.5f, c.y), Offset(c.x + r * 1.5f, c.y), sw, StrokeCap.Round)
+        drawLine(p.color.copy(alpha = a), Offset(c.x, c.y - r * 1.5f), Offset(c.x, c.y + r * 1.5f), sw, StrokeCap.Round)
+        drawCircle(Color.White.copy(alpha = a), r * 0.35f, c)
+    }
+}
+
+/** Expanding shockwave ring where a block bursts through its gate. [t] goes 0..1. */
+fun DrawScope.drawShockwave(center: Offset, cell: Float, color: Color, t: Float) {
+    if (cell < 2f || t >= 1f) return
+    val e = 1f - (1f - t) * (1f - t)
+    val r = (cell * (0.3f + 1.5f * e)).coerceAtLeast(1f)
+    val a = (1f - t)
+    drawCircle(color.copy(alpha = 0.55f * a), r, center, style = Stroke(cell * 0.16f * (1f - t) + 1f))
+    drawCircle(Color.White.copy(alpha = 0.8f * a), r * 0.92f, center, style = Stroke(cell * 0.05f * (1f - t) + 1f))
+    drawCircle(
+        Brush.radialGradient(listOf(Color.White.copy(alpha = 0.5f * a), Color.Transparent), center, (r * 0.8f).coerceAtLeast(1f)),
+        r * 0.8f, center,
+    )
 }
 
 /**

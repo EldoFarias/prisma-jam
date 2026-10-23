@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -126,18 +127,58 @@ fun WinOverlay(vm: GameViewModel, ads: AdsManager, onHome: () -> Unit) {
     val used = (vm.timeTotal - vm.timeLeft).toInt().coerceAtLeast(0)
     DimOverlay {
         GlassPanel {
-            Text(stringResource(R.string.level_x, lv.number), style = Styles.plain(16, Palette.TextSecondary, FontWeight.Bold))
-            Text(stringResource(R.string.level_complete), style = Styles.glow(30, Palette.Gold, FontWeight.Black), textAlign = TextAlign.Center)
+            Text(
+                if (vm.isDaily) stringResource(R.string.daily_title) else stringResource(R.string.level_x, lv.number),
+                style = Styles.plain(16, Palette.TextSecondary, FontWeight.Bold),
+            )
+            Text(
+                stringResource(if (vm.isDaily) R.string.daily_complete else R.string.level_complete),
+                style = Styles.glow(30, Palette.Gold, FontWeight.Black), textAlign = TextAlign.Center,
+            )
+            WinStars(vm.starsEarned)
             Text(stringResource(R.string.time_used, used / 60, used % 60), style = Styles.plain(16, Palette.TextPrimary, FontWeight.Bold))
-            if (Progress.winStreak >= 2) {
+            if (!vm.isDaily && Progress.winStreak >= 2) {
                 Text(stringResource(R.string.win_streak, Progress.winStreak), style = Styles.glow(18, Color(0xFFFB923C), FontWeight.Black))
             }
             CoinsEarned(vm.coinsEarned)
             Spacer(Modifier.height(8.dp))
-            PrimaryButton(stringResource(R.string.next_level)) {
-                ads.onNewGame { vm.startLevel(lv.number + 1) }
+            if (vm.isDaily) {
+                PrimaryButton(stringResource(R.string.home)) { onHome() }
+            } else {
+                PrimaryButton(stringResource(R.string.next_level)) {
+                    ads.onNewGame { vm.startLevel(lv.number + 1) }
+                }
+                SecondaryButton(stringResource(R.string.home)) { onHome() }
             }
-            SecondaryButton(stringResource(R.string.home)) { onHome() }
+        }
+    }
+}
+
+/** Three stars that pop in one after another. */
+@Composable
+private fun WinStars(earned: Int) {
+    val anim = remember { List(3) { androidx.compose.animation.core.Animatable(0f) } }
+    androidx.compose.runtime.LaunchedEffect(earned) {
+        anim.forEachIndexed { i, a ->
+            kotlinx.coroutines.delay(if (i == 0) 250L else 180L)
+            a.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.45f, stiffness = 380f))
+        }
+    }
+    Row(verticalAlignment = Alignment.Bottom) {
+        for (i in 0 until 3) {
+            val big = i == 1
+            val sc = anim[i].value
+            StarIcon(
+                filled = i < earned,
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .size(if (big) 52.dp else 42.dp)
+                    .graphicsLayer {
+                        scaleX = sc
+                        scaleY = sc
+                        rotationZ = (1f - sc) * -40f
+                    },
+            )
         }
     }
 }
@@ -164,7 +205,7 @@ fun TimeUpOverlay(vm: GameViewModel, ads: AdsManager, onHome: () -> Unit) {
             }
             SecondaryButton(stringResource(R.string.try_again)) {
                 vm.acceptLoss()
-                ads.onNewGame { vm.startLevel(lv.number) }
+                ads.onNewGame { if (vm.isDaily) vm.restart() else vm.startLevel(lv.number) }
             }
             SecondaryButton(stringResource(R.string.home)) {
                 vm.acceptLoss()

@@ -57,7 +57,7 @@
     <string name="mission_fast_wins">Win %1$d levels with 30+ seconds left</string>
     <string name="mission_streak">Win %1$d levels in a row</string>
     <string name="mission_done">Mission complete! ✓</string>
-    <string name="daily_reward">Daily reward</string>
+    <string name="daily_reward">Win %1$d coins</string>
     <string name="day_x">Day %1$d</string>
     <string name="collect">Collect %1$d</string>
     <string name="collect_double">▶  Collect %1$d (double)</string>
@@ -71,4 +71,10 @@
     <string name="notif_channel">Daily reminder</string>
     <string name="notif_title">Your blocks are waiting! 🧩</string>
     <string name="notif_text">Level %1$d is ready. Can you clear it in time?</string>
+    <string name="map_title">Levels</string>
+    <string name="daily_title">Daily challenge</string>
+    <string name="daily_done">Done today ✓</string>
+    <string name="daily_complete">CHALLENGE COMPLETE!</string>
+    <string name="press_back_exit">Press back again to exit</string>
+    <string name="play">Play</string>
 </resources>

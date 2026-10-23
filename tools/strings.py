@@ -224,6 +224,28 @@ T = {
 ),
 }
 
+# Map, daily challenge, back-to-exit
+ADD = {
+"en": dict(map_title="Levels", daily_title="Daily challenge", daily_reward="Win %1$d coins", daily_done="Done today ✓",
+           daily_complete="CHALLENGE COMPLETE!", press_back_exit="Press back again to exit", play="Play"),
+"pt": dict(map_title="Fases", daily_title="Desafio diário", daily_reward="Ganhe %1$d moedas", daily_done="Concluído hoje ✓",
+           daily_complete="DESAFIO CONCLUÍDO!", press_back_exit="Toque em voltar de novo para sair", play="Jogar"),
+"es": dict(map_title="Niveles", daily_title="Desafío diario", daily_reward="Gana %1$d monedas", daily_done="Completado hoy ✓",
+           daily_complete="¡DESAFÍO COMPLETADO!", press_back_exit="Pulsa atrás otra vez para salir", play="Jugar"),
+"fr": dict(map_title="Niveaux", daily_title="Défi du jour", daily_reward="Gagne %1$d pièces", daily_done="Terminé aujourd'hui ✓",
+           daily_complete="DÉFI RÉUSSI !", press_back_exit="Appuie encore sur retour pour quitter", play="Jouer"),
+"de": dict(map_title="Level", daily_title="Tägliche Challenge", daily_reward="Gewinne %1$d Münzen", daily_done="Heute geschafft ✓",
+           daily_complete="CHALLENGE GESCHAFFT!", press_back_exit="Zum Beenden erneut Zurück drücken", play="Spielen"),
+"tr": dict(map_title="Bölümler", daily_title="Günlük görev", daily_reward="%1$d altın kazan", daily_done="Bugün tamamlandı ✓",
+           daily_complete="GÖREV TAMAMLANDI!", press_back_exit="Çıkmak için tekrar geri bas", play="Oyna"),
+"in": dict(map_title="Level", daily_title="Tantangan harian", daily_reward="Menangkan %1$d koin", daily_done="Selesai hari ini ✓",
+           daily_complete="TANTANGAN SELESAI!", press_back_exit="Tekan kembali sekali lagi untuk keluar", play="Main"),
+"hi": dict(map_title="लेवल", daily_title="दैनिक चुनौती", daily_reward="%1$d सिक्के जीतें", daily_done="आज पूरा ✓",
+           daily_complete="चुनौती पूरी!", press_back_exit="बाहर निकलने के लिए फिर से वापस दबाएँ", play="खेलें"),
+}
+for _l, _kv in ADD.items():
+    T[_l].update(_kv)
+
 DIRS = {"en": "values", "pt": "values-pt", "es": "values-es", "fr": "values-fr", "de": "values-de",
         "tr": "values-tr", "in": "values-in", "hi": "values-hi"}
 

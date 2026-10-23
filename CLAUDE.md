@@ -17,7 +17,7 @@ adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
   aparecem como anotações do job.
 - `.github/workflows/screenshots.yml` (manual): prints no emulador em vários tamanhos → Releases → `telas`.
 - Atalhos só no debug: `adb shell am start -n com.farias.prismajam.debug/com.farias.prismajam.MainActivity --es screen game --ei level 12`
-  (`home`, `chest`, `game`, `themes`, `stats`; `--ez landscape true`).
+  (`home`, `chest`, `game`, `daily`, `map`, `themes`, `stats`; `--ez landscape true`; `--ez shatter true` estilhaça blocos em loop).
 
 ## Regras do jogo
 

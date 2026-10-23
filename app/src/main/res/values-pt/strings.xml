@@ -56,7 +56,7 @@
     <string name="mission_fast_wins">Vença %1$d fases com 30+ segundos sobrando</string>
     <string name="mission_streak">Vença %1$d fases seguidas</string>
     <string name="mission_done">Missão concluída! ✓</string>
-    <string name="daily_reward">Recompensa diária</string>
+    <string name="daily_reward">Ganhe %1$d moedas</string>
     <string name="day_x">Dia %1$d</string>
     <string name="collect">Coletar %1$d</string>
     <string name="collect_double">▶  Coletar %1$d (em dobro)</string>
@@ -70,4 +70,10 @@
     <string name="notif_channel">Lembrete diário</string>
     <string name="notif_title">Seus blocos estão te esperando! 🧩</string>
     <string name="notif_text">A fase %1$d está pronta. Consegue terminar a tempo?</string>
+    <string name="map_title">Fases</string>
+    <string name="daily_title">Desafio diário</string>
+    <string name="daily_done">Concluído hoje ✓</string>
+    <string name="daily_complete">DESAFIO CONCLUÍDO!</string>
+    <string name="press_back_exit">Toque em voltar de novo para sair</string>
+    <string name="play">Jogar</string>
 </resources>

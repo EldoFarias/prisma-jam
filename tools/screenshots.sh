@@ -44,6 +44,8 @@ adb shell wm size 1080x2400; adb shell wm density 420; sleep 2
 shot "phone-chest" chest
 shot "phone-themes" themes
 shot "phone-stats" stats
+shot "phone-map" map
+shot "phone-daily" daily
 shot "phone-shatter" game 30 shatter
 cap phone-shatter2
 # Wide window layout (tablet held sideways)

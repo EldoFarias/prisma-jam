@@ -56,7 +56,7 @@
     <string name="mission_fast_wins">30+ सेकंड बचाकर %1$d लेवल जीतें</string>
     <string name="mission_streak">लगातार %1$d लेवल जीतें</string>
     <string name="mission_done">मिशन पूरा! ✓</string>
-    <string name="daily_reward">रोज़ का इनाम</string>
+    <string name="daily_reward">%1$d सिक्के जीतें</string>
     <string name="day_x">दिन %1$d</string>
     <string name="collect">%1$d लें</string>
     <string name="collect_double">▶  %1$d लें (दोगुना)</string>
@@ -70,4 +70,10 @@
     <string name="notif_channel">रोज़ाना रिमाइंडर</string>
     <string name="notif_title">आपके ब्लॉक इंतज़ार कर रहे हैं! 🧩</string>
     <string name="notif_text">लेवल %1$d तैयार है। क्या आप समय पर पूरा कर पाएँगे?</string>
+    <string name="map_title">लेवल</string>
+    <string name="daily_title">दैनिक चुनौती</string>
+    <string name="daily_done">आज पूरा ✓</string>
+    <string name="daily_complete">चुनौती पूरी!</string>
+    <string name="press_back_exit">बाहर निकलने के लिए फिर से वापस दबाएँ</string>
+    <string name="play">खेलें</string>
 </resources>

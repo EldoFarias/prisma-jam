@@ -56,7 +56,7 @@
     <string name="mission_fast_wins">Gana %1$d niveles con 30+ segundos de sobra</string>
     <string name="mission_streak">Gana %1$d niveles seguidos</string>
     <string name="mission_done">¡Misión cumplida! ✓</string>
-    <string name="daily_reward">Recompensa diaria</string>
+    <string name="daily_reward">Gana %1$d monedas</string>
     <string name="day_x">Día %1$d</string>
     <string name="collect">Cobrar %1$d</string>
     <string name="collect_double">▶  Cobrar %1$d (doble)</string>
@@ -70,4 +70,10 @@
     <string name="notif_channel">Recordatorio diario</string>
     <string name="notif_title">¡Tus bloques te esperan! 🧩</string>
     <string name="notif_text">El nivel %1$d está listo. ¿Lo terminas a tiempo?</string>
+    <string name="map_title">Niveles</string>
+    <string name="daily_title">Desafío diario</string>
+    <string name="daily_done">Completado hoy ✓</string>
+    <string name="daily_complete">¡DESAFÍO COMPLETADO!</string>
+    <string name="press_back_exit">Pulsa atrás otra vez para salir</string>
+    <string name="play">Jugar</string>
 </resources>

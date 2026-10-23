@@ -99,6 +99,9 @@ object Progress {
             .let { if (it.size == Missions.COUNT) it else List(Missions.COUNT) { false } }
         chestLastDay = prefs.getInt("chest_last_day", 0)
         chestRun = prefs.getInt("chest_run", 0)
+        dailyLastDay = prefs.getInt("daily_last_day", 0)
+        dailyRun = prefs.getInt("daily_run", 0)
+        loadStars()
     }
 
     // ------------------------------------------------------------------ coins
@@ -266,6 +269,58 @@ object Progress {
         saveMissions()
         addCoins(m.reward)
         return m.reward
+    }
+
+    // ------------------------------------------------------------------ stars per level
+
+    /** Stars (1-3) earned per level number, best result kept. */
+    private val stars = HashMap<Int, Int>()
+    var totalStars by mutableIntStateOf(0)
+        private set
+
+    fun starsFor(n: Int): Int = stars[n] ?: 0
+
+    fun setStars(n: Int, value: Int) {
+        if (value <= starsFor(n)) return
+        stars[n] = value
+        totalStars = stars.values.sum()
+        prefs.edit().putString("stars", stars.entries.joinToString(",") { "${it.key}:${it.value}" }).apply()
+    }
+
+    private fun loadStars() {
+        stars.clear()
+        prefs.getString("stars", "")!!.split(",").forEach { e ->
+            val (k, v) = e.split(":").takeIf { it.size == 2 } ?: return@forEach
+            val n = k.toIntOrNull() ?: return@forEach
+            stars[n] = v.toIntOrNull() ?: return@forEach
+        }
+        totalStars = stars.values.sum()
+    }
+
+    // ------------------------------------------------------------------ daily challenge
+
+    const val DAILY_REWARD = 60
+    var dailyLastDay by mutableIntStateOf(0)
+        private set
+    var dailyRun by mutableIntStateOf(0)
+        private set
+
+    fun dailyDoneToday(): Boolean = dailyLastDay == today()
+
+    /** Days in a row with the challenge done (still counts until the end of today). */
+    fun dailyStreak(): Int = if (dailyLastDay == today() || dailyLastDay == yesterday()) dailyRun else 0
+
+    /** Coins for today's challenge: grows a little with the streak. */
+    fun dailyReward(): Int = DAILY_REWARD + 10 * dailyStreak().coerceAtMost(7)
+
+    fun onDailyWon(): Int {
+        if (dailyDoneToday()) return 0
+        val reward = dailyReward()
+        dailyRun = if (dailyLastDay == yesterday()) dailyRun + 1 else 1
+        dailyLastDay = today()
+        prefs.edit().putInt("daily_last_day", dailyLastDay).putInt("daily_run", dailyRun).apply()
+        addCoins(reward)
+        return reward
     }
 
     // ------------------------------------------------------------------ daily chest

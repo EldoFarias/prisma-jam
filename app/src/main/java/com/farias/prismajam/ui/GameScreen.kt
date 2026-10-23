@@ -213,11 +213,13 @@ private fun TopBar(vm: GameViewModel, compact: Boolean) {
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            stringResource(R.string.level_x, vm.level?.number ?: 1),
-            style = Styles.gradient(if (compact) 22 else 26),
+        FitText(
+            if (vm.isDaily) stringResource(R.string.daily_title) else stringResource(R.string.level_x, vm.level?.number ?: 1),
+            Styles.gradient(if (compact) 22 else 26),
+            modifier = Modifier.weight(1f),
+            minSp = 14f,
         )
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.width(8.dp))
         CoinPill(Progress.coins)
         Spacer(Modifier.width(10.dp))
         GlassCircleButton(onClick = { vm.paused = true }) { PauseIcon(Modifier.size(16.dp)) }
@@ -408,7 +410,22 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                 }
                 drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash, spill = false)
             }
+            // Exit burst: shockwave at the gate, glass shards and glitter.
+            for (e in vm.exits) {
+                val t = ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f)
+                val b = e.block
+                val midR = b.r + b.shape.rows / 2f
+                val midC = b.c + b.shape.cols / 2f
+                val at = when (e.side) {
+                    Side.TOP -> Offset(midC, 0f)
+                    Side.BOTTOM -> Offset(midC, rows.toFloat())
+                    Side.LEFT -> Offset(0f, midR)
+                    Side.RIGHT -> Offset(cols.toFloat(), midR)
+                }
+                drawShockwave(Offset(o.x + at.x * c, o.y + at.y * c), c, Palette.block(b.color), t)
+            }
             drawShards(vm.shards, o, c)
+            drawSparkles(vm.sparkles, o, c, vm.fx.now / 1e9f)
         }
     }
 }

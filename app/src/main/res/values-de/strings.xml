@@ -56,7 +56,7 @@
     <string name="mission_fast_wins">Schaffe %1$d Level mit 30+ Sekunden übrig</string>
     <string name="mission_streak">Schaffe %1$d Level in Folge</string>
     <string name="mission_done">Mission erfüllt! ✓</string>
-    <string name="daily_reward">Tägliche Belohnung</string>
+    <string name="daily_reward">Gewinne %1$d Münzen</string>
     <string name="day_x">Tag %1$d</string>
     <string name="collect">%1$d abholen</string>
     <string name="collect_double">▶  %1$d abholen (doppelt)</string>
@@ -70,4 +70,10 @@
     <string name="notif_channel">Tägliche Erinnerung</string>
     <string name="notif_title">Deine Blöcke warten! 🧩</string>
     <string name="notif_text">Level %1$d ist bereit. Schaffst du es rechtzeitig?</string>
+    <string name="map_title">Level</string>
+    <string name="daily_title">Tägliche Challenge</string>
+    <string name="daily_done">Heute geschafft ✓</string>
+    <string name="daily_complete">CHALLENGE GESCHAFFT!</string>
+    <string name="press_back_exit">Zum Beenden erneut Zurück drücken</string>
+    <string name="play">Spielen</string>
 </resources>

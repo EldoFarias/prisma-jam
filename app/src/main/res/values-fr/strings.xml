@@ -56,7 +56,7 @@
     <string name="mission_fast_wins">Réussissez %1$d niveaux avec 30+ secondes restantes</string>
     <string name="mission_streak">Réussissez %1$d niveaux d\'affilée</string>
     <string name="mission_done">Mission accomplie ! ✓</string>
-    <string name="daily_reward">Récompense du jour</string>
+    <string name="daily_reward">Gagne %1$d pièces</string>
     <string name="day_x">Jour %1$d</string>
     <string name="collect">Récupérer %1$d</string>
     <string name="collect_double">▶  Récupérer %1$d (double)</string>
@@ -70,4 +70,10 @@
     <string name="notif_channel">Rappel quotidien</string>
     <string name="notif_title">Vos blocs vous attendent ! 🧩</string>
     <string name="notif_text">Le niveau %1$d est prêt. Le finirez-vous à temps ?</string>
+    <string name="map_title">Niveaux</string>
+    <string name="daily_title">Défi du jour</string>
+    <string name="daily_done">Terminé aujourd\'hui ✓</string>
+    <string name="daily_complete">DÉFI RÉUSSI !</string>
+    <string name="press_back_exit">Appuie encore sur retour pour quitter</string>
+    <string name="play">Jouer</string>
 </resources>

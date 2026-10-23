@@ -56,7 +56,7 @@
     <string name="mission_fast_wins">Menangkan %1$d level dengan sisa 30+ detik</string>
     <string name="mission_streak">Menangkan %1$d level berturut-turut</string>
     <string name="mission_done">Misi selesai! ✓</string>
-    <string name="daily_reward">Hadiah harian</string>
+    <string name="daily_reward">Menangkan %1$d koin</string>
     <string name="day_x">Hari %1$d</string>
     <string name="collect">Ambil %1$d</string>
     <string name="collect_double">▶  Ambil %1$d (ganda)</string>
@@ -70,4 +70,10 @@
     <string name="notif_channel">Pengingat harian</string>
     <string name="notif_title">Balokmu menunggu! 🧩</string>
     <string name="notif_text">Level %1$d sudah siap. Bisakah kamu selesai tepat waktu?</string>
+    <string name="map_title">Level</string>
+    <string name="daily_title">Tantangan harian</string>
+    <string name="daily_done">Selesai hari ini ✓</string>
+    <string name="daily_complete">TANTANGAN SELESAI!</string>
+    <string name="press_back_exit">Tekan kembali sekali lagi untuk keluar</string>
+    <string name="play">Main</string>
 </resources>

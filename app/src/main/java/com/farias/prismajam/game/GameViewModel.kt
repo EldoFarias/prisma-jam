@@ -45,6 +45,21 @@ class Shard(
     var life: Float,
     val maxLife: Float,
     val gravity: Float,
+    /** 0 = splinter (tiny), 1 = shard, 2 = chunk (big): bigger pieces get a thicker side. */
+    val kind: Int = 1,
+)
+
+/** A twinkling glitter star left by an explosion (board cells). */
+class Sparkle(
+    var x: Float,
+    var y: Float,
+    var vx: Float,
+    var vy: Float,
+    val size: Float,
+    val color: Color,
+    var life: Float,
+    val maxLife: Float,
+    val phase: Float,
 )
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
@@ -92,6 +107,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var coinsEarned by mutableIntStateOf(0)
         private set
+    /** Stars for the level just won (1-3, by time left). */
+    var starsEarned by mutableIntStateOf(0)
+        private set
+    /** Playing today's daily challenge instead of a regular level. */
+    var isDaily by mutableStateOf(false)
+        private set
 
     /** Id of the block under the finger, or -1. */
     var dragging by mutableIntStateOf(-1)
@@ -114,6 +135,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         get() = (screenAt(Offset(1f, 0f)) - screenAt(Offset.Zero)).getDistance().coerceAtLeast(1f)
 
     val shards = ArrayList<Shard>()
+    val sparkles = ArrayList<Sparkle>()
     /** Debug only (screenshots): keep shattering blocks in place so the effect can be captured. */
     var debugShatterLoop = false
 
@@ -142,9 +164,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     // ------------------------------------------------------------- starting
 
     fun startLevel(number: Int = Progress.level) {
+        isDaily = false
+        begin(JamLevels.level(number))
+    }
+
+    fun startDaily() {
+        isDaily = true
+        begin(JamLevels.daily(Progress.today()))
+    }
+
+    private fun begin(lv: JamLevel) {
         panelJob?.cancel()
-        val lv = JamLevels.level(number)
         level = lv
+        starsEarned = 0
         board = lv.board.copy()
         gates = board.gates
         totalBlocks = board.blocks.size
@@ -164,12 +196,18 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         visual.clear()
         exits.clear()
         shards.clear()
+        sparkles.clear()
         fx.particles.clear()
         sync()
         for (b in blocks) visual[b.id] = Offset(b.c.toFloat(), b.r.toFloat())
     }
 
     fun restart() {
+        if (isDaily) {
+            startDaily()
+            sound.play(Sfx.WHOOSH, 0.6f)
+            return
+        }
         val n = level?.number ?: Progress.level
         startLevel(n)
         sound.play(Sfx.WHOOSH, 0.6f)
@@ -213,6 +251,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 s.rot += s.vrot * dt
             }
         }
+        if (sparkles.isNotEmpty()) {
+            val it = sparkles.iterator()
+            while (it.hasNext()) {
+                val p = it.next()
+                p.life -= dt
+                if (p.life <= 0f) { it.remove(); continue }
+                p.vx *= 1f - (dt * 2.5f).coerceAtMost(0.6f)
+                p.vy *= 1f - (dt * 2.5f).coerceAtMost(0.6f)
+                p.vy += 0.8f * dt
+                p.x += p.vx * dt
+                p.y += p.vy * dt
+            }
+        }
     }
 
     /**
@@ -224,47 +275,81 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val cells = b.cells()
         val cx = cells.map { it.c + 0.5f }.average().toFloat()
         val cy = cells.map { it.r + 0.5f }.average().toFloat()
-        fun j() = (rng.nextFloat() - 0.5f) * 0.22f
-        for (cell in cells) {
-            val m = 0.06f
-            val x0 = cell.c + m
-            val y0 = cell.r + m
-            val x1 = cell.c + 1 - m
-            val y1 = cell.r + 1 - m
-            val mid = Offset(cell.c + 0.5f + j(), cell.r + 0.5f + j())
-            // Ring of points around the cell: corners and jittered edge midpoints.
-            val ring = listOf(
-                Offset(x0, y0), Offset((x0 + x1) / 2 + j(), y0), Offset(x1, y0), Offset(x1, (y0 + y1) / 2 + j()),
-                Offset(x1, y1), Offset((x0 + x1) / 2 + j(), y1), Offset(x0, y1), Offset(x0, (y0 + y1) / 2 + j()),
+        val explode = dir == Offset.Zero
+
+        /** Random convex-ish polygon of radius [r] with 3..5 corners, around (0,0). */
+        fun poly(r: Float): FloatArray {
+            val n = 3 + rng.nextInt(3)
+            val start = rng.nextFloat() * 6.283f
+            val out = FloatArray(n * 2)
+            for (i in 0 until n) {
+                val a = start + i * 6.283f / n + (rng.nextFloat() - 0.5f) * (3.0f / n)
+                val rr = r * (0.65f + rng.nextFloat() * 0.5f)
+                out[i * 2] = kotlin.math.cos(a) * rr
+                out[i * 2 + 1] = kotlin.math.sin(a) * rr
+            }
+            return out
+        }
+
+        fun piece(kind: Int, radius: Float, x: Float, y: Float, speedK: Float, life: Float) {
+            val out = Offset(x - cx, y - cy)
+            val vx: Float
+            val vy: Float
+            if (explode) {
+                val len = out.getDistance().coerceAtLeast(0.25f)
+                val sp = (3.5f + rng.nextFloat() * 6f) * speedK
+                vx = out.x / len * sp + (rng.nextFloat() - 0.5f) * 4f
+                vy = out.y / len * sp - 3f + (rng.nextFloat() - 0.5f) * 4f
+            } else {
+                // Mostly through the gate, fanning out like a burst of glass.
+                val sp = (0.55f + rng.nextFloat() * 0.75f) * speedK
+                vx = dir.x * sp + out.x * 2.2f + (rng.nextFloat() - 0.5f) * 5f * speedK
+                vy = dir.y * sp + out.y * 2.2f + (rng.nextFloat() - 0.5f) * 5f * speedK
+            }
+            shards.add(
+                Shard(
+                    x, y, vx, vy, rng.nextFloat() * 6.283f, (rng.nextFloat() - 0.5f) * (8f + 14f * speedK), poly(radius), color,
+                    shade = rng.nextFloat(), life = life, maxLife = life, gravity = gravity, kind = kind,
+                )
             )
-            for (i in ring.indices) {
-                val a = ring[i]
-                val bb = ring[(i + 1) % ring.size]
-                val g = Offset((mid.x + a.x + bb.x) / 3f, (mid.y + a.y + bb.y) / 3f)
-                val pts = floatArrayOf(mid.x - g.x, mid.y - g.y, a.x - g.x, a.y - g.y, bb.x - g.x, bb.y - g.y)
-                val out = Offset(g.x - cx, g.y - cy)
-                val speed = 0.6f + rng.nextFloat() * 0.8f
-                val vx: Float
-                val vy: Float
-                if (dir == Offset.Zero) {
-                    val len = out.getDistance().coerceAtLeast(0.2f)
-                    val sp = 4f + rng.nextFloat() * 6f
-                    vx = out.x / len * sp + (rng.nextFloat() - 0.5f) * 3f
-                    vy = out.y / len * sp - 3f + (rng.nextFloat() - 0.5f) * 3f
-                } else {
-                    vx = dir.x * speed + out.x * 2.5f + (rng.nextFloat() - 0.5f) * 3.5f
-                    vy = dir.y * speed + out.y * 2.5f + (rng.nextFloat() - 0.5f) * 3.5f
-                }
-                val life = 0.55f + rng.nextFloat() * 0.4f
-                shards.add(
-                    Shard(
-                        g.x, g.y, vx, vy, 0f, (rng.nextFloat() - 0.5f) * 14f, pts, color,
-                        shade = rng.nextFloat(), life = life, maxLife = life, gravity = gravity,
+        }
+
+        for (cell in cells) {
+            fun inCell() = Offset(cell.c + 0.15f + rng.nextFloat() * 0.7f, cell.r + 0.15f + rng.nextFloat() * 0.7f)
+            // Big chunks: slow, heavy, last longest.
+            repeat(2) {
+                val p = inCell()
+                piece(2, 0.2f + rng.nextFloat() * 0.08f, p.x, p.y, 0.75f, 0.75f + rng.nextFloat() * 0.3f)
+            }
+            // Medium shards.
+            repeat(5) {
+                val p = inCell()
+                piece(1, 0.1f + rng.nextFloat() * 0.07f, p.x, p.y, 1f, 0.6f + rng.nextFloat() * 0.35f)
+            }
+            // Tiny splinters: fast and short-lived.
+            repeat(9) {
+                val p = inCell()
+                piece(0, 0.035f + rng.nextFloat() * 0.04f, p.x, p.y, 1.45f, 0.4f + rng.nextFloat() * 0.35f)
+            }
+            // Glitter
+            repeat(3) {
+                val p = inCell()
+                val life = 0.6f + rng.nextFloat() * 0.6f
+                val sp = if (explode) 3f else 4.5f
+                sparkles.add(
+                    Sparkle(
+                        p.x, p.y,
+                        (if (explode) 0f else dir.x * 0.35f) + (rng.nextFloat() - 0.5f) * sp,
+                        (if (explode) 0f else dir.y * 0.35f) + (rng.nextFloat() - 0.5f) * sp,
+                        size = 0.08f + rng.nextFloat() * 0.1f,
+                        color = if (rng.nextFloat() < 0.5f) Color.White else Palette.lighter(color, 0.5f),
+                        life = life, maxLife = life, phase = rng.nextFloat() * 6.283f,
                     )
                 )
             }
         }
-        if (shards.size > 900) shards.subList(0, shards.size - 900).clear()
+        if (shards.size > 1600) shards.subList(0, shards.size - 1600).clear()
+        if (sparkles.size > 300) sparkles.subList(0, sparkles.size - 300).clear()
     }
 
     // ------------------------------------------------------------- input
@@ -283,7 +368,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         if (b.ice > 0) {
             sound.play(Sfx.INVALID, 0.6f)
             vibrate(Haptic.TICK)
-            fx.text("❄ ${b.ice}", root, Color(0xFFBAE6FD))
+            fx.text("❄ ${b.ice}", toRoot(root), Color(0xFFBAE6FD))
             return
         }
         if (!started) started = true
@@ -362,9 +447,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
         shatter(b, dir, gravity = 6f)
         val sc = screenCell
-        for (cell in b.cells()) {
-            fx.burst(screenAt(Offset(cell.c + 0.5f, cell.r + 0.5f)), color, sc * 0.5f, 3)
-        }
         fx.shake(sc * 0.08f)
         val big = b.shape.size >= 4
         sound.play(Sfx.CLEAR, 0.9f, 0.9f + 0.05f * (totalBlocks - board.blocks.size).coerceAtMost(8))
@@ -431,16 +513,30 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         hammerMode = false
         val lv = level ?: return
         val used = (timeTotal - timeLeft).roundToInt()
-        Progress.onLevelWon(lv.number, used)
-        coinsEarned = (10 + lv.number / 4).coerceAtMost(35) + if (timeLeft >= timeTotal * 0.5f) 10 else 0
-        Progress.addCoins(coinsEarned)
+        val left = timeLeft / timeTotal.coerceAtLeast(1f)
+        starsEarned = when {
+            left >= 0.5f -> 3
+            left >= 0.25f -> 2
+            else -> 1
+        }
+        if (isDaily) {
+            coinsEarned = Progress.onDailyWon()
+        } else {
+            Progress.onLevelWon(lv.number, used)
+            Progress.setStars(lv.number, starsEarned)
+            coinsEarned = (10 + lv.number / 4).coerceAtMost(35) + 5 * (starsEarned - 1)
+            Progress.addCoins(coinsEarned)
+        }
         missionEvent(MissionType.LEVELS, 1)
         if (timeLeft >= timeTotal * 0.4f) missionEvent(MissionType.FAST_WINS, 1)
         missionEvent(MissionType.STREAK, Progress.winStreak, asMax = true)
         // Confetti
         val center = screenAt(Offset(board.cols / 2f, board.rows / 2f))
         for (i in 1..7) fx.burst(center, Palette.block(i), screenCell * 1.4f, 10)
-        fx.text(getApplication<Application>().getString(R.string.level_complete), center, Palette.Gold, big = true, delayMs = 100)
+        fx.text(
+            getApplication<Application>().getString(if (isDaily) R.string.daily_complete else R.string.level_complete),
+            center, Palette.Gold, big = true, delayMs = 100,
+        )
         sound.play(Sfx.RECORD)
         vibrate(Haptic.HEAVY)
         panelJob?.cancel()
@@ -524,7 +620,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
-        const val EXIT_NANOS = 260_000_000L
+        const val EXIT_NANOS = 450_000_000L
         const val EXIT_PUSH = 0.35f
         const val LEAN = 0.3f
         const val FREEZE_SECONDS = 10f

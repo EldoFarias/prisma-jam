@@ -56,7 +56,7 @@
     <string name="mission_fast_wins">30+ saniye kala %1$d bölüm kazan</string>
     <string name="mission_streak">Üst üste %1$d bölüm kazan</string>
     <string name="mission_done">Görev tamamlandı! ✓</string>
-    <string name="daily_reward">Günlük ödül</string>
+    <string name="daily_reward">%1$d altın kazan</string>
     <string name="day_x">Gün %1$d</string>
     <string name="collect">%1$d al</string>
     <string name="collect_double">▶  %1$d al (iki kat)</string>
@@ -70,4 +70,10 @@
     <string name="notif_channel">Günlük hatırlatma</string>
     <string name="notif_title">Blokların seni bekliyor! 🧩</string>
     <string name="notif_text">Bölüm %1$d hazır. Zamanında bitirebilir misin?</string>
+    <string name="map_title">Bölümler</string>
+    <string name="daily_title">Günlük görev</string>
+    <string name="daily_done">Bugün tamamlandı ✓</string>
+    <string name="daily_complete">GÖREV TAMAMLANDI!</string>
+    <string name="press_back_exit">Çıkmak için tekrar geri bas</string>
+    <string name="play">Oyna</string>
 </resources>

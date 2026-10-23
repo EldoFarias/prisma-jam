@@ -1,6 +1,17 @@
 package com.farias.prismajam.ui
 
 import android.Manifest
+import android.app.Activity
+import android.os.SystemClock
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.runtime.mutableLongStateOf
+import kotlinx.coroutines.delay
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -84,12 +95,38 @@ fun HomeScreen(
     onPlay: () -> Unit,
     onThemes: () -> Unit,
     onStats: () -> Unit,
+    onMap: () -> Unit,
+    onDaily: () -> Unit,
 ) {
     val context = LocalContext.current
     var showSettings by remember { mutableStateOf(false) }
     var showHowTo by remember { mutableStateOf(false) }
     var showMissions by remember { mutableStateOf(false) }
     var showChest by remember { mutableStateOf(false) }
+
+    // Back closes an open dialog; on the menu itself it must be pressed twice to leave the game.
+    var backPressedAt by remember { mutableLongStateOf(0L) }
+    var showExitHint by remember { mutableStateOf(false) }
+    BackHandler {
+        when {
+            showSettings || showHowTo || showMissions || showChest -> {
+                showSettings = false
+                showHowTo = false
+                showMissions = false
+                showChest = false
+            }
+            SystemClock.uptimeMillis() - backPressedAt < EXIT_WINDOW_MS -> (context as? Activity)?.finish()
+            else -> {
+                backPressedAt = SystemClock.uptimeMillis()
+                showExitHint = true
+            }
+        }
+    }
+    LaunchedEffect(backPressedAt) {
+        if (backPressedAt == 0L) return@LaunchedEffect
+        delay(EXIT_WINDOW_MS)
+        showExitHint = false
+    }
 
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         Progress.setNotifications(granted)
@@ -189,6 +226,14 @@ fun HomeScreen(
                         }
                         Spacer(Modifier.height(16.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            MapCard(Modifier.weight(1f), sz.cardHeight, onMap)
+                            DailyCard(Modifier.weight(1f), sz.cardHeight) {
+                                sound.play(Sfx.WHOOSH, 0.7f)
+                                onDaily()
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             HomeTile(stringResource(R.string.missions), Modifier.weight(1f), sz.tileHeight, Progress.claimableMissions, { showMissions = true }) {
                                 MissionIcon(Modifier.size(24.dp))
                             }
@@ -224,16 +269,133 @@ fun HomeScreen(
         if (showHowTo) HowToDialog { showHowTo = false }
         if (showMissions) MissionsDialog(sound) { showMissions = false }
         if (showChest) ChestDialog(ads, sound) { showChest = false }
+
+        AnimatedVisibility(
+            visible = showExitHint,
+            enter = fadeIn() + slideInVertically { it / 2 },
+            exit = fadeOut() + slideOutVertically { it / 2 },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .systemBarsPadding()
+                .padding(bottom = 96.dp, start = 24.dp, end = 24.dp),
+        ) {
+            Text(
+                stringResource(R.string.press_back_exit),
+                style = Styles.plain(15, Color.White, FontWeight.Bold),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(Color(0xE6120B2E))
+                    .border(1.dp, Palette.GlassBorder, RoundedCornerShape(50))
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+            )
+        }
     }
 }
 
-private class HomeSizes(val logo: Dp, val title: Int, val subtitle: Int, val playHeight: Dp, val tileHeight: Dp, val contentWidth: Dp)
+/** Time to press back a second time to leave the game from the menu. */
+private const val EXIT_WINDOW_MS = 2000L
+
+@Composable
+private fun ModeCard(
+    modifier: Modifier,
+    height: Dp,
+    title: String,
+    subtitle: String,
+    colors: List<Color>,
+    enabled: Boolean = true,
+    badge: String? = null,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+) {
+    val shape = RoundedCornerShape(22.dp)
+    Box(
+        modifier = modifier
+            .height(height)
+            .clip(shape)
+            .background(Brush.linearGradient(colors.map { it.copy(alpha = 0.28f) }))
+            .border(1.5.dp, Brush.linearGradient(colors), shape)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(12.dp),
+    ) {
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0x33FFFFFF)),
+                contentAlignment = Alignment.Center,
+            ) { icon() }
+            Column {
+                FitText(title, Styles.plain(17, Palette.TextPrimary, FontWeight.Black), minSp = 11f)
+                Text(subtitle, style = Styles.plain(13, Palette.TextSecondary, FontWeight.SemiBold), maxLines = 2)
+            }
+        }
+        if (badge != null) {
+            Text(
+                badge,
+                style = Styles.glow(16, Color(0xFFFB923C), FontWeight.Black),
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
+        }
+    }
+}
+
+/** Level map: shows the current level and the stars collected. */
+@Composable
+private fun MapCard(modifier: Modifier, height: Dp, onClick: () -> Unit) {
+    ModeCard(
+        modifier = modifier,
+        height = height,
+        title = stringResource(R.string.map_title),
+        subtitle = stringResource(R.string.level_x, Progress.level),
+        colors = listOf(Color(0xFFE879F9), Color(0xFF8B5CF6)),
+        badge = if (Progress.totalStars > 0) "★ ${Progress.totalStars}" else null,
+        onClick = onClick,
+    ) {
+        Canvas(Modifier.size(30.dp)) {
+            // Tiny map trail: three dots joined by a line.
+            val w = size.width
+            val pts = listOf(Offset(w * 0.2f, w * 0.8f), Offset(w * 0.5f, w * 0.45f), Offset(w * 0.8f, w * 0.2f))
+            drawLine(Color.White.copy(alpha = 0.6f), pts[0], pts[1], w * 0.08f)
+            drawLine(Color.White.copy(alpha = 0.6f), pts[1], pts[2], w * 0.08f)
+            drawCircle(Palette.Cyan, w * 0.13f, pts[0])
+            drawCircle(Color(0xFFE879F9), w * 0.13f, pts[1])
+            drawCircle(Palette.Gold, w * 0.16f, pts[2])
+        }
+    }
+}
+
+/** Today's challenge: one special level per day, bigger reward, streak of days. */
+@Composable
+private fun DailyCard(modifier: Modifier, height: Dp, onDaily: () -> Unit) {
+    val done = Progress.dailyDoneToday()
+    val streak = Progress.dailyStreak()
+    ModeCard(
+        modifier = modifier,
+        height = height,
+        title = stringResource(R.string.daily_title),
+        subtitle = if (done) stringResource(R.string.daily_done) else stringResource(R.string.daily_reward, Progress.dailyReward()),
+        colors = listOf(Palette.Cyan, Color(0xFF34D399)),
+        enabled = !done,
+        badge = if (streak > 0) "🔥 $streak" else null,
+        onClick = onDaily,
+    ) {
+        Icon(
+            if (done) Icons.Default.Check else Icons.Default.Star,
+            contentDescription = null,
+            tint = if (done) Color(0xFF34D399) else Palette.Gold,
+            modifier = Modifier.size(26.dp),
+        )
+    }
+}
+
+private class HomeSizes(val logo: Dp, val title: Int, val subtitle: Int, val playHeight: Dp, val tileHeight: Dp, val contentWidth: Dp, val cardHeight: Dp)
 
 private fun homeSizes(width: Dp, height: Dp): HomeSizes = when {
-    width >= 600.dp && height >= 700.dp -> HomeSizes(170.dp, 64, 32, 84.dp, 92.dp, 560.dp)
-    height < 560.dp -> HomeSizes(84.dp, 36, 20, 60.dp, 64.dp, 420.dp)
-    height < 640.dp -> HomeSizes(104.dp, 42, 22, 64.dp, 68.dp, 420.dp)
-    else -> HomeSizes(136.dp, 50, 26, 74.dp, 76.dp, 420.dp)
+    width >= 600.dp && height >= 700.dp -> HomeSizes(170.dp, 64, 32, 84.dp, 92.dp, 560.dp, 128.dp)
+    height < 560.dp -> HomeSizes(70.dp, 32, 18, 56.dp, 60.dp, 420.dp, 92.dp)
+    height < 640.dp -> HomeSizes(90.dp, 38, 20, 60.dp, 64.dp, 420.dp, 100.dp)
+    else -> HomeSizes(128.dp, 50, 26, 74.dp, 76.dp, 420.dp, 112.dp)
 }
 
 /** Logo: a little jam of jelly blocks heading for a glowing gate. */
