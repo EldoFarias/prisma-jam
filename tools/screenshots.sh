@@ -8,6 +8,13 @@ adb install -r "$APK"
 adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
 mkdir -p shots
 
+cap() { # name — save on the device then pull (more reliable than exec-out on a busy emulator)
+  adb wait-for-device
+  adb shell screencap -p /sdcard/cap.png
+  adb pull /sdcard/cap.png "shots/$1.png" >/dev/null
+  echo "::notice::print $1 = $(stat -c%s "shots/$1.png" 2>/dev/null || echo missing) bytes"
+}
+
 shot() { # name screen [level] [landscape|shatter]
   adb shell am force-stop $PKG
   if [ "$4" = "shatter" ]; then
@@ -18,7 +25,7 @@ shot() { # name screen [level] [landscape|shatter]
     adb shell am start -n $PKG/$ACT --es screen "$2" --ei level "${3:-1}"
   fi
   sleep 14
-  adb exec-out screencap -p > "shots/$1.png"
+  cap "$1"
 }
 
 for cfg in "phone 1080x2400 420" "tiny 480x854 240" "small 720x1280 320" "tablet 1600x2560 320"; do
@@ -38,9 +45,7 @@ shot "phone-chest" chest
 shot "phone-themes" themes
 shot "phone-stats" stats
 shot "phone-shatter" game 30 shatter
-adb exec-out screencap -p > "shots/phone-shatter2.png"
-sleep 0.3
-adb exec-out screencap -p > "shots/phone-shatter3.png"
+cap phone-shatter2
 # Wide window layout (tablet held sideways)
 adb shell wm size 1600x2560; adb shell wm density 320; sleep 2
 adb shell settings put system accelerometer_rotation 0
