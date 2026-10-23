@@ -372,7 +372,7 @@ fun DrawScope.drawGate(
     flash: Float = 0f, spill: Boolean = true, bar: Boolean = true,
 ) {
     val pad = cell * 0.1f
-    val th = frame * 0.56f            // bar thickness
+    val th = frame * 0.72f            // bar thickness
     val inset = (frame - th) * 0.5f   // centred in the frame
     val x0 = boardOrigin.x + gate.start * cell + pad
     val x1 = boardOrigin.x + (gate.start + gate.length) * cell - pad
