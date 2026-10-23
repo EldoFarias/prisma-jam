@@ -303,9 +303,10 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                 // A gentle 3D tilt: the board lies on a table, the far edge leaning away.
                 .graphicsLayer {
                     rotationX = BOARD_TILT
-                    cameraDistance = 16f * density
-                    scaleX = 0.97f
-                    scaleY = 0.97f
+                    cameraDistance = 12f * density
+                    // Narrower so the near (wider) edge still fits; taller so the board reads long.
+                    scaleX = 0.9f
+                    scaleY = 1.08f
                 }
                 .onGloballyPositioned { coords ->
                     val f = with(localDensity) { frame.toPx() }
@@ -602,4 +603,4 @@ private fun FloatingTextItem(t: FloatText, fx: Fx) {
 }
 
 /** Degrees the board leans back (3D look). */
-private const val BOARD_TILT = 10f
+private const val BOARD_TILT = 20f
