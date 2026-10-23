@@ -76,7 +76,7 @@ fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float): Path {
 const val BLOCK_DEPTH = 0.14f
 
 /** Gap between a block and the cell edge (so neighbouring blocks read as separate pieces). */
-const val BLOCK_GAP = 0.085f
+const val BLOCK_GAP = 0.11f
 
 /**
  * A glossy 3D block: soft contact shadow, a darker side wall (thickness), a top face with a diagonal
@@ -398,7 +398,7 @@ fun DrawScope.drawGate(
         Side.LEFT -> Rect(left, y0, left + spillLen, y1) to Brush.horizontalGradient(listOf(color.copy(alpha = light), Color.Transparent), left, left + spillLen)
         Side.RIGHT -> Rect(right - spillLen, y0, right, y1) to Brush.horizontalGradient(listOf(Color.Transparent, color.copy(alpha = light)), right - spillLen, right)
     }
-    if (spill) drawRect(spillBrush, spillRect.topLeft, spillRect.size)
+    if (spill && false) drawRect(spillBrush, spillRect.topLeft, spillRect.size) // light spill disabled: looked like stray bands
     if (!bar) return
     // Slot cut into the frame
     val cr = CornerRadius(th * 0.5f)

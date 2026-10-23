@@ -43,11 +43,12 @@ object JamLevels {
     }
 
     private fun sizeFor(n: Int, rnd: Random): Pair<Int, Int> = when {
-        n <= 3 -> 5 to 5
-        n <= 10 -> 6 to 6
-        n <= 25 -> 7 to 6
-        n <= 50 -> 7 to 7
-        else -> if (rnd.nextBoolean()) 8 to 7 else 8 to 8
+        // Portrait boards (more rows than columns) fill the tall phone screen.
+        n <= 3 -> 6 to 5
+        n <= 10 -> 7 to 5
+        n <= 25 -> 8 to 6
+        n <= 50 -> if (rnd.nextBoolean()) 8 to 6 else 9 to 6
+        else -> if (rnd.nextBoolean()) 9 to 7 else 10 to 7
     }
 
     private fun colorsFor(n: Int): Int = when {
@@ -102,7 +103,7 @@ object JamLevels {
         // level is solvable by construction, and the board can be packed tight.
         val board = JamBoard(rows, cols, stones, gates, emptyList())
         val freeCells = rows * cols - stones.size
-        val targetFill = ((0.52f + 0.26f * d) * freeCells).roundToInt()
+        val targetFill = ((0.48f + 0.24f * d) * freeCells).roundToInt()
         val wantIce = ArrayList<Pair<Int, Int>>() // block id -> desired ice
         var filled = 0
         var nextId = 1
