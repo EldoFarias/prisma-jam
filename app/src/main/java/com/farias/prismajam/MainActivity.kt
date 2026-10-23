@@ -99,6 +99,7 @@ class MainActivity : ComponentActivity() {
         return when (target) {
             "game" -> {
                 vm.startLevel(intent.getIntExtra("level", 1))
+                vm.debugShatterLoop = intent.getBooleanExtra("shatter", false)
                 Screen.GAME
             }
             "themes" -> Screen.THEMES

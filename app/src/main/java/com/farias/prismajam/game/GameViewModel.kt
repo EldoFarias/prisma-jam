@@ -114,6 +114,21 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         get() = (screenAt(Offset(1f, 0f)) - screenAt(Offset.Zero)).getDistance().coerceAtLeast(1f)
 
     val shards = ArrayList<Shard>()
+    /** Debug only (screenshots): keep shattering blocks in place so the effect can be captured. */
+    var debugShatterLoop = false
+
+    fun debugShatter() {
+        val b = blocks.randomOrNull() ?: return
+        val side = board.findExit(b)?.second ?: Side.RIGHT
+        val dir = when (side) {
+            Side.TOP -> Offset(0f, -9f)
+            Side.BOTTOM -> Offset(0f, 9f)
+            Side.LEFT -> Offset(-9f, 0f)
+            Side.RIGHT -> Offset(9f, 0f)
+        }
+        exits.add(ExitAnim(b, side, fx.now))
+        shatter(b, dir, gravity = 6f)
+    }
     private val rng = java.util.Random()
 
     /** Smoothly animated top-left (in cells) per block id, updated every frame. */

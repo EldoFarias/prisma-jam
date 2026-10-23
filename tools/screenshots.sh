@@ -8,9 +8,11 @@ adb install -r "$APK"
 adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
 mkdir -p shots
 
-shot() { # name screen [level] [landscape]
+shot() { # name screen [level] [landscape|shatter]
   adb shell am force-stop $PKG
-  if [ "$4" = "landscape" ]; then
+  if [ "$4" = "shatter" ]; then
+    adb shell am start -n $PKG/$ACT --es screen "$2" --ei level "${3:-1}" --ez shatter true
+  elif [ "$4" = "landscape" ]; then
     adb shell am start -n $PKG/$ACT --es screen "$2" --ei level "${3:-1}" --ez landscape true
   else
     adb shell am start -n $PKG/$ACT --es screen "$2" --ei level "${3:-1}"
@@ -35,6 +37,10 @@ adb shell wm size 1080x2400; adb shell wm density 420; sleep 2
 shot "phone-chest" chest
 shot "phone-themes" themes
 shot "phone-stats" stats
+shot "phone-shatter" game 30 shatter
+adb exec-out screencap -p > "shots/phone-shatter2.png"
+sleep 0.3
+adb exec-out screencap -p > "shots/phone-shatter3.png"
 # Wide window layout (tablet held sideways)
 adb shell wm size 1600x2560; adb shell wm density 320; sleep 2
 adb shell settings put system accelerometer_rotation 0

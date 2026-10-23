@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.farias.prismajam.BuildConfig
 import com.farias.prismajam.R
 import com.farias.prismajam.ads.AdsManager
 import com.farias.prismajam.audio.Haptics
@@ -90,6 +91,14 @@ fun GameScreen(vm: GameViewModel, ads: AdsManager, onGreatMoment: () -> Unit, on
     val view = LocalView.current
     var pendingPay by remember { mutableStateOf<PendingPay?>(null) }
 
+    if (BuildConfig.DEBUG && vm.debugShatterLoop) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                kotlinx.coroutines.delay(700)
+                vm.debugShatter()
+            }
+        }
+    }
     LaunchedEffect(view) { vm.haptic = { kind -> Haptics.play(view.context, kind) } }
     LaunchedEffect(Unit) {
         while (true) withFrameNanos {
