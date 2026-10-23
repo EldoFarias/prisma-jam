@@ -8,12 +8,12 @@ adb install -r "$APK"
 adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
 mkdir -p shots
 
-shot() { # name screen [landscape]
+shot() { # name screen [level] [landscape]
   adb shell am force-stop $PKG
-  if [ "$3" = "landscape" ]; then
-    adb shell am start -n $PKG/$ACT --es screen "$2" --ez landscape true
+  if [ "$4" = "landscape" ]; then
+    adb shell am start -n $PKG/$ACT --es screen "$2" --ei level "${3:-1}" --ez landscape true
   else
-    adb shell am start -n $PKG/$ACT --es screen "$2"
+    adb shell am start -n $PKG/$ACT --es screen "$2" --ei level "${3:-1}"
   fi
   sleep 14
   adb exec-out screencap -p > "shots/$1.png"
@@ -27,7 +27,8 @@ for cfg in "tiny 480x854 240" "small 720x1280 320" "phone 1080x2400 420" "tablet
   sleep 3
   # Warm-up launch: the first start after a resize is slow on the emulator.
   shot "_warmup-$name" home
-  for s in home game adventure_game map; do shot "$name-$s" "$s"; done
+  shot "$name-home" home
+  for lv in 1 12 30; do shot "$name-game$lv" game $lv; done
 done
 # Extra checks on the normal phone: daily chest popup, themes, stats
 adb shell wm size 1080x2400; adb shell wm density 420; sleep 2
@@ -38,7 +39,7 @@ shot "phone-stats" stats
 adb shell wm size 1600x2560; adb shell wm density 320; sleep 2
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1
-shot "tablet-landscape-game" game landscape
+shot "tablet-landscape-game" game 12 landscape
 adb shell settings put system user_rotation 0
 adb shell wm size reset
 adb shell wm density reset

@@ -1,60 +1,55 @@
-# Prisma Blocks — contexto do projeto
+# Prisma Jam — contexto do projeto
 
-Jogo de blocos 8x8 (estilo Block Blast) para Android, só Play Store. Kotlin + Jetpack Compose, sem engine.
+Puzzle de deslizar blocos de gelatina até a porta da mesma cor (estilo Color Block Jam), contra o relógio.
+Android, só Play Store. Kotlin + Jetpack Compose (desenho em Canvas), sem engine.
 Dono: Eldo (EldoFarias). Comunicação em português. Monetização: AdMob (banner, intersticial, premiado).
 
 ## Como compilar e rodar
 
 ```bash
-./gradlew installDebug        # instala no celular conectado (pacote com.farias.prismajam.debug)
-adb logcat -s PrismaBlocks AndroidRuntime Vibrator VibratorManagerService
+./gradlew installDebug        # pacote com.farias.prismajam.debug
+adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
 ```
 
 - Debug usa sempre IDs de **teste** do AdMob; release lê os IDs reais de variáveis/secrets (`ADMOB_*`).
 - `applicationId` = `com.farias.prismajam` (não mudar depois de publicar).
-- A cada push na `main`, o GitHub Actions (`.github/workflows/android.yml`) gera o APK de teste em Releases → `teste`.
-  Erros de compilação aparecem como anotações do job.
-- `.github/workflows/screenshots.yml` (manual): abre o app no emulador em 4 tamanhos e publica os prints em Releases → `telas`.
-- Atalhos só no debug: `adb shell am start -n com.farias.prismajam.debug/com.farias.prismajam.MainActivity --es screen game`
-  (`home`, `chest`, `game`, `adventure_game`, `map`, `themes`, `stats`; `--ez landscape true`).
+- Cada push na `main` gera o APK em Releases → `teste` (`.github/workflows/android.yml`). Erros de compilação
+  aparecem como anotações do job.
+- `.github/workflows/screenshots.yml` (manual): prints no emulador em vários tamanhos → Releases → `telas`.
+- Atalhos só no debug: `adb shell am start -n com.farias.prismajam.debug/com.farias.prismajam.MainActivity --es screen game --ei level 12`
+  (`home`, `chest`, `game`, `themes`, `stats`; `--ez landscape true`).
+
+## Regras do jogo
+
+- Arrasta-se um bloco (polyominó) célula a célula; ele sai do tabuleiro quando empurrado contra uma porta da sua cor
+  que cubra toda a largura dele naquele lado.
+- Pedras (fase 8+) são fixas. Gelo (fase 12+): o número diminui a cada bloco que sai; com 0 o bloco solta.
+  Setas (fase 18+): bloco só anda na horizontal ou vertical.
+- Relógio começa no primeiro toque. Poderes: Congelar (10 s) e Martelo (quebra um bloco). +30 s por vídeo uma vez por fase.
 
 ## Arquitetura
 
 | Pasta | O que tem |
 |---|---|
-| `game/GameEngine.kt` | Regras puras (sem Android): tabuleiro, peças, linhas, combo, gemas, desfazer, bomba, salvar/restaurar. Testável em JVM. |
-| `game/Shapes.kt` | 39 formatos de peça com pesos. |
-| `game/Adventure.kt` | Fases geradas pelo número (gemas/linhas/pontos), estrelas por jogadas. Calibrado por simulação (`tools/AdventureBench.kt`). |
-| `game/GameViewModel.kt` | Estado da partida para a UI, modos CLASSIC/DAILY/ADVENTURE, poderes, efeitos, missões. |
-| `data/Progress.kt` | Tudo que persiste (SharedPreferences): moedas, temas, recordes, sequência, missões, baú, fases. |
+| `game/Jam.kt` | Regras puras (sem Android): tabuleiro, formas, portas, movimento, saída, gelo, `JamSolver`. Testável em JVM. |
+| `game/Levels.kt` | Fases geradas pelo número (determinístico). Montadas de trás pra frente → sempre têm solução; o solver confere. |
+| `game/GameViewModel.kt` | Estado da partida para a UI: arrastar, animações, tempo, poderes, vitória/derrota, missões. |
+| `data/Progress.kt` | Tudo que persiste: fase, moedas, temas, recordes, sequência, missões, baú. |
 | `data/Missions.kt` | 3 missões diárias determinísticas por data. |
-| `ui/` | Telas Compose: Splash, Home, Game, Adventure (mapa), Themes, Stats, Overlays (pausa/fim/vitória), Rewards (missões/baú). |
-| `ui/GemPainter.kt`, `Fx.kt`, `Background.kt` | Desenho dos blocos, partículas/textos flutuantes, fundo aurora. |
-| `ads/AdsManager.kt` | AdMob + consentimento UMP; intersticial a cada 2 partidas e ≥90 s. |
-| `audio/` | `SoundManager` (SoundPool), `MusicPlayer` (loop), `Haptics` (vibração). |
-| `notify/DailyReminder.kt` | Lembrete diário 7h30 via WorkManager. |
-| `tools/` | Scripts que geram ícone, sons, música e traduções (`translations.py`), testes da lógica. |
-
-Telas se adaptam: compacto (altura < 660 dp), tablet (escala 1.3 nos controles) e layout deitado (largura > altura).
-`android:appCategory="game"` mantém a orientação retrato em tablets no Android 16.
+| `ui/JamPainter.kt` | Desenho dos blocos de gelatina, portas, gelo, pedras (paths em cache). |
+| `ui/` | Splash, Home, Game, Themes, Stats, Overlays (pausa/vitória/tempo esgotado), Rewards. |
+| `ads/AdsManager.kt` | AdMob + consentimento UMP. |
+| `audio/` | `SoundManager`, `MusicPlayer`, `Haptics` (vibração com atributos de mídia/jogo — necessário no MIUI). |
+| `tools/` | `strings.py` (traduções), `make_art.py` (ícones e arte da loja), `JamTest.kt` (teste das fases na JVM). |
 
 ## Convenções
 
-- Textos em 8 idiomas: `values` (en), `pt`, `es`, `fr`, `de`, `tr`, `in`, `hi`. Ao criar string nova, adicionar em en/pt/es
-  e nos dicionários de `tools/translations.py`, depois rodar `python3 tools/translations.py app/src/main/res`.
-- Gradientes radiais com raio 0 derrubam o app: sempre proteger tamanhos < 1 px antes de desenhar.
+- Textos em 8 idiomas (`values` en, `pt`, `es`, `fr`, `de`, `tr`, `in`, `hi`): editar `tools/strings.py` e rodar
+  `python3 tools/strings.py app/src/main/res`.
+- Gradientes radiais com raio 0 derrubam o app: proteger tamanhos < 1 px.
+- Telas se adaptam: compacto, tablet (escala 1.25) e deitado. `android:appCategory="game"` mantém retrato no Android 16.
 
 ## Pendências
 
-1. **Vibração não funciona no celular do Eldo** (vibração ligada no jogo). Já trocamos `performHapticFeedback` por
-   `Vibrator`/`VibratorManager` direto (`audio/Haptics.kt`) com permissão `VIBRATE`, e ainda assim não vibra.
-   Hipóteses para investigar com o celular no cabo:
-   - Vibração sem atributos é tratada como "toque" e bloqueada pela intensidade de vibração ao toque da ROM (MIUI/HyperOS).
-     Testar `vibrate(effect, VibrationAttributes.createForUsage(USAGE_MEDIA))` (API 33+) ou
-     `vibrate(effect, AudioAttributes USAGE_GAME)` (API 26–32).
-   - Modo silencioso / Não perturbe bloqueando vibrações de mídia.
-   - Conferir no logcat (`VibratorManagerService`) se a vibração chega e por que é ignorada.
-   - Confirmar que `Progress.vibrationOn` está `true` e que `vm.haptic` está sendo chamado.
-2. Preparar publicação: política de privacidade (GitHub Pages), textos/prints da loja em 8 idiomas,
-   keystore de upload + secrets `KEYSTORE_*`, IDs reais do AdMob nos secrets.
-3. Fase 2: login com Google Play Games (salvamento na nuvem, ranking, conquistas).
+1. Testar no celular e ajustar dificuldade/tempo das fases.
+2. Publicação: política de privacidade, textos/prints da loja, keystore + secrets `KEYSTORE_*`, IDs reais do AdMob.

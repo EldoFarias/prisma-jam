@@ -1,5 +1,5 @@
 ---
-description: Contexto do projeto Prisma Blocks
+description: Contexto do projeto Prisma Jam
 alwaysApply: true
 ---
 Antes de qualquer tarefa, leia @CLAUDE.md na raiz do repositório: ele descreve a arquitetura,
