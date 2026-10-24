@@ -76,4 +76,19 @@
     <string name="daily_complete">DESAFIO CONCLUÍDO!</string>
     <string name="press_back_exit">Toque em voltar de novo para sair</string>
     <string name="play">Jogar</string>
+    <string name="power_hint">Dica</string>
+    <string name="power_scissors">Tesoura</string>
+    <string name="new_mechanic">Novidade!</string>
+    <string name="mech_stone_t">Pedra</string>
+    <string name="mech_stone">Pedras nunca se movem. Planeje o caminho em volta delas.</string>
+    <string name="mech_ice_t">Bloco congelado</string>
+    <string name="mech_ice">O número diminui a cada bloco que sai. No 0 ele derrete e pode se mover.</string>
+    <string name="mech_arrow_t">Bloco de direção</string>
+    <string name="mech_arrow">Blocos com setas só deslizam na direção indicada: para os lados ou para cima e para baixo.</string>
+    <string name="mech_layer_t">Bloco de duas camadas</string>
+    <string name="mech_layer">Primeiro passe pela porta da cor de fora: a casca quebra e ele fica com a cor de dentro. Depois leve até a nova porta.</string>
+    <string name="mech_lock_t">Chave e cadeado</string>
+    <string name="mech_lock">O bloco com cadeado não se move. Tire primeiro o bloco com a chave para abrir.</string>
+    <string name="mech_timed_t">Porta com tempo</string>
+    <string name="mech_timed">Portas com relógio abrem e fecham sozinhas. Espere o momento certo.</string>
 </resources>

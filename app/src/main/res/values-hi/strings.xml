@@ -76,4 +76,19 @@
     <string name="daily_complete">चुनौती पूरी!</string>
     <string name="press_back_exit">बाहर निकलने के लिए फिर से वापस दबाएँ</string>
     <string name="play">खेलें</string>
+    <string name="power_hint">संकेत</string>
+    <string name="power_scissors">कैंची</string>
+    <string name="new_mechanic">नया!</string>
+    <string name="mech_stone_t">पत्थर</string>
+    <string name="mech_stone">पत्थर कभी नहीं हिलते। उनके आसपास रास्ता बनाएं।</string>
+    <string name="mech_ice_t">जमा हुआ ब्लॉक</string>
+    <string name="mech_ice">हर बार कोई ब्लॉक निकलने पर संख्या घटती है। 0 पर यह पिघल कर चल सकता है।</string>
+    <string name="mech_arrow_t">दिशा ब्लॉक</string>
+    <string name="mech_arrow">तीर वाले ब्लॉक सिर्फ दिखाई दिशा में खिसकते हैं: दाएँ-बाएँ या ऊपर-नीचे।</string>
+    <string name="mech_layer_t">दो परत वाला ब्लॉक</string>
+    <string name="mech_layer">पहले बाहरी रंग के गेट से निकालें: खोल टूटेगा और अंदर का रंग आ जाएगा। फिर उसका नया गेट खोजें।</string>
+    <string name="mech_lock_t">चाबी और ताला</string>
+    <string name="mech_lock">ताले वाला ब्लॉक नहीं हिलता। पहले चाबी वाले ब्लॉक को बाहर निकालें।</string>
+    <string name="mech_timed_t">टाइमर गेट</string>
+    <string name="mech_timed">घड़ी वाले गेट अपने आप खुलते और बंद होते हैं। सही पल का इंतज़ार करें।</string>
 </resources>

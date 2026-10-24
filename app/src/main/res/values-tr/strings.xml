@@ -76,4 +76,19 @@
     <string name="daily_complete">GÖREV TAMAMLANDI!</string>
     <string name="press_back_exit">Çıkmak için tekrar geri bas</string>
     <string name="play">Oyna</string>
+    <string name="power_hint">İpucu</string>
+    <string name="power_scissors">Makas</string>
+    <string name="new_mechanic">Yeni!</string>
+    <string name="mech_stone_t">Taş</string>
+    <string name="mech_stone">Taşlar asla hareket etmez. Etrafından bir yol bul.</string>
+    <string name="mech_ice_t">Donmuş blok</string>
+    <string name="mech_ice">Her blok çıktığında sayı azalır. 0 olunca erir ve hareket edebilir.</string>
+    <string name="mech_arrow_t">Yön bloğu</string>
+    <string name="mech_arrow">Oklu bloklar yalnızca gösterilen yönde kayar: yana ya da yukarı-aşağı.</string>
+    <string name="mech_layer_t">İki katmanlı blok</string>
+    <string name="mech_layer">Önce dış renkteki kapıdan geçir: kabuk kırılır ve iç rengi alır. Sonra yeni kapısını bul.</string>
+    <string name="mech_lock_t">Anahtar ve kilit</string>
+    <string name="mech_lock">Kilitli blok hareket etmez. Açmak için önce anahtarlı bloğu çıkar.</string>
+    <string name="mech_timed_t">Zamanlı kapı</string>
+    <string name="mech_timed">Saatli kapılar kendiliğinden açılıp kapanır. Doğru anı bekle.</string>
 </resources>

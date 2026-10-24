@@ -76,4 +76,19 @@
     <string name="daily_complete">DÉFI RÉUSSI !</string>
     <string name="press_back_exit">Appuie encore sur retour pour quitter</string>
     <string name="play">Jouer</string>
+    <string name="power_hint">Indice</string>
+    <string name="power_scissors">Ciseaux</string>
+    <string name="new_mechanic">Nouveau !</string>
+    <string name="mech_stone_t">Pierre</string>
+    <string name="mech_stone">Les pierres ne bougent jamais. Trouve un chemin autour.</string>
+    <string name="mech_ice_t">Bloc gelé</string>
+    <string name="mech_ice">Le nombre baisse à chaque bloc qui sort. À 0, il fond et peut bouger.</string>
+    <string name="mech_arrow_t">Bloc à sens unique</string>
+    <string name="mech_arrow">Les blocs fléchés ne glissent que dans le sens indiqué : sur les côtés ou de haut en bas.</string>
+    <string name="mech_layer_t">Bloc à deux couches</string>
+    <string name="mech_layer">Fais-le d\'abord passer par une porte de la couleur extérieure : la coque casse et il prend la couleur intérieure. Puis trouve sa nouvelle porte.</string>
+    <string name="mech_lock_t">Clé et cadenas</string>
+    <string name="mech_lock">Le bloc cadenassé ne bouge pas. Fais d\'abord sortir le bloc avec la clé pour l\'ouvrir.</string>
+    <string name="mech_timed_t">Porte minutée</string>
+    <string name="mech_timed">Les portes avec une horloge s\'ouvrent et se ferment seules. Attends le bon moment.</string>
 </resources>

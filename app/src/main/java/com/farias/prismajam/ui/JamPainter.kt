@@ -28,12 +28,12 @@ private val pathCache = HashMap<Long, Path>()
  * Outline of a polyomino as ONE merged path at (0, 0): outer corners rounded, shared edges seamless
  * (so outlines don't show the cell seams). Cached per shape and cell size.
  */
-fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float): Path {
-    val key = shapeId.toLong() * 100_000L + (cell * 10f).toLong()
+fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float, gap: Float = BLOCK_GAP): Path {
+    val key = shapeId.toLong() * 100_000_000L + (cell * 10f).toLong() * 1000L + (gap * 1000f).toLong()
     pathCache[key]?.let { return it }
     val set = cells.toHashSet()
-    val m = cell * BLOCK_GAP
-    val rad = cell * 0.26f
+    val m = cell * gap
+    val rad = cell * (0.26f - (gap - BLOCK_GAP) * 0.5f).coerceAtLeast(0.12f)
     var merged = Path()
     for (c in cells) {
         val up = Cell(c.r - 1, c.c) in set
@@ -67,7 +67,7 @@ fun blockPath(shapeId: Int, cells: List<Cell>, cell: Float): Path {
         }
         merged = Path().apply { op(merged, piece, PathOperation.Union) }
     }
-    if (pathCache.size > 400) pathCache.clear()
+    if (pathCache.size > 600) pathCache.clear()
     pathCache[key] = merged
     return merged
 }
@@ -406,7 +406,7 @@ fun DrawScope.drawShockwave(center: Offset, cell: Float, color: Color, t: Float)
  */
 fun DrawScope.drawGate(
     gate: Gate, boardOrigin: Offset, cell: Float, rows: Int, cols: Int, frame: Float, color: Color, pulse: Float,
-    flash: Float = 0f, spill: Boolean = true, bar: Boolean = true,
+    flash: Float = 0f, spill: Boolean = true, bar: Boolean = true, closed: Float = 0f, timed: Boolean = false,
 ) {
     val pad = cell * 0.1f
     val th = frame * 0.72f            // bar thickness
@@ -458,6 +458,35 @@ fun DrawScope.drawGate(
         rect.topLeft, rect.size, cr,
     )
     if (flash > 0f) drawRoundRect(Color.White.copy(alpha = 0.7f * flash), rect.topLeft, rect.size, cr)
+    if (timed) {
+        // Metal shutter sliding over the gate while it is closed, with bars across.
+        if (closed > 0f) {
+            val shutter = if (horizontal) Rect(rect.left, rect.top, rect.left + rect.width * closed, rect.bottom)
+            else Rect(rect.left, rect.top, rect.right, rect.top + rect.height * closed)
+            drawRoundRect(
+                Brush.linearGradient(listOf(Color(0xFF9CA3AF), Color(0xFF4B5563)), shutter.topLeft, shutter.bottomRight),
+                shutter.topLeft, shutter.size, cr,
+            )
+            val bars = (gate.length * 3)
+            for (i in 1 until bars) {
+                val t = i / bars.toFloat()
+                if (horizontal) {
+                    val x = rect.left + rect.width * t
+                    if (x < shutter.right) drawLine(Color(0xFF1F2937), Offset(x, rect.top + th * 0.15f), Offset(x, rect.bottom - th * 0.15f), th * 0.12f)
+                } else {
+                    val y = rect.top + rect.height * t
+                    if (y < shutter.bottom) drawLine(Color(0xFF1F2937), Offset(rect.left + th * 0.15f, y), Offset(rect.right - th * 0.15f, y), th * 0.12f)
+                }
+            }
+        }
+        // Little clock badge so timed gates read at a glance.
+        val badge = if (horizontal) Offset(rect.left - th * 0.1f, rect.center.y) else Offset(rect.center.x, rect.top - th * 0.1f)
+        drawCircle(Color(0xFF0B0620), th * 0.55f, badge)
+        drawCircle(Color.White.copy(alpha = 0.9f), th * 0.42f, badge, style = Stroke(th * 0.1f))
+        drawLine(Color.White, badge, Offset(badge.x, badge.y - th * 0.28f), th * 0.1f, StrokeCap.Round)
+        drawLine(Color.White, badge, Offset(badge.x + th * 0.2f, badge.y), th * 0.1f, StrokeCap.Round)
+        if (closed >= 0.99f) return
+    }
     // Chevrons
     val w = Color.White.copy(alpha = 0.9f)
     val sw = th * 0.16f
@@ -473,4 +502,97 @@ fun DrawScope.drawGate(
             Side.RIGHT -> { drawLine(w, Offset(center.x - a * 0.5f, center.y - a), Offset(center.x + a * 0.5f, center.y), sw, StrokeCap.Round); drawLine(w, Offset(center.x - a * 0.5f, center.y + a), Offset(center.x + a * 0.5f, center.y), sw, StrokeCap.Round) }
         }
     }
+}
+
+
+/** Inner core of a two-layer block: the color under the shell, shown through a window in the top. */
+fun DrawScope.drawLayerCore(block: Block, origin: Offset, cell: Float, inner: Color) {
+    if (cell < 2f) return
+    translate(origin.x, origin.y) {
+        val core = blockPath(block.shape.id, block.shape.cells, cell, gap = 0.27f)
+        drawPath(core, Palette.darker(inner, 0.45f), style = Stroke(cell * 0.06f))
+        drawPath(
+            core,
+            Brush.verticalGradient(listOf(Palette.lighter(inner, 0.3f), inner, Palette.darker(inner, 0.15f)), 0f, block.shape.rows * cell),
+        )
+        drawPath(core, Color.White.copy(alpha = 0.5f), style = Stroke(cell * 0.025f))
+    }
+}
+
+/** Padlock over a locked block (darkened). */
+fun DrawScope.drawLock(block: Block, origin: Offset, cell: Float) {
+    if (cell < 2f) return
+    translate(origin.x, origin.y) {
+        drawPath(blockPath(block.shape.id, block.shape.cells, cell), Color.Black.copy(alpha = 0.32f))
+    }
+    val c = lockSpot(block, origin, cell)
+    val w = cell * 0.46f
+    val h = cell * 0.36f
+    // Shackle
+    drawArc(
+        Color(0xFFE5E7EB), 180f, 180f, false,
+        topLeft = Offset(c.x - w * 0.32f, c.y - h * 0.95f), size = Size(w * 0.64f, h * 0.9f),
+        style = Stroke(cell * 0.07f, cap = StrokeCap.Round),
+    )
+    // Body
+    drawRoundRect(
+        Brush.verticalGradient(listOf(Color(0xFFFDE68A), Color(0xFFD97706)), c.y - h * 0.5f, c.y + h * 0.5f),
+        Offset(c.x - w / 2f, c.y - h * 0.45f), Size(w, h), CornerRadius(cell * 0.07f),
+    )
+    drawRoundRect(Color(0xFF92400E), Offset(c.x - w / 2f, c.y - h * 0.45f), Size(w, h), CornerRadius(cell * 0.07f), style = Stroke(cell * 0.025f))
+    drawCircle(Color(0xFF78350F), cell * 0.05f, Offset(c.x, c.y - h * 0.05f))
+    drawLine(Color(0xFF78350F), Offset(c.x, c.y), Offset(c.x, c.y + h * 0.25f), cell * 0.04f, StrokeCap.Round)
+}
+
+/** Gold key on the block that opens the padlock. */
+fun DrawScope.drawKey(block: Block, origin: Offset, cell: Float) {
+    if (cell < 2f) return
+    val c = lockSpot(block, origin, cell)
+    val gold = Brush.linearGradient(listOf(Color(0xFFFEF3C7), Color(0xFFF59E0B)), Offset(c.x - cell * 0.3f, c.y - cell * 0.3f), Offset(c.x + cell * 0.3f, c.y + cell * 0.3f))
+    val r = cell * 0.13f
+    val ring = Offset(c.x - cell * 0.16f, c.y)
+    drawCircle(Color.Black.copy(alpha = 0.25f), r * 1.15f, ring + Offset(0f, cell * 0.03f))
+    drawCircle(gold, r, ring, style = Stroke(cell * 0.07f))
+    drawLine(gold, Offset(ring.x + r, c.y), Offset(c.x + cell * 0.28f, c.y), cell * 0.07f, StrokeCap.Round)
+    drawLine(gold, Offset(c.x + cell * 0.14f, c.y), Offset(c.x + cell * 0.14f, c.y + cell * 0.11f), cell * 0.06f, StrokeCap.Round)
+    drawLine(gold, Offset(c.x + cell * 0.25f, c.y), Offset(c.x + cell * 0.25f, c.y + cell * 0.09f), cell * 0.06f, StrokeCap.Round)
+}
+
+/** Centre of the block's first cell (where lock/key badges go). */
+private fun lockSpot(block: Block, origin: Offset, cell: Float): Offset {
+    val first = block.shape.cells.minWith(compareBy({ it.r }, { it.c }))
+    return Offset(origin.x + (first.c + 0.5f) * cell, origin.y + (first.r + 0.5f) * cell)
+}
+
+/** Hint: the block glows, a ghost shows where to slide it, and an arrow points out through the gate. */
+fun DrawScope.drawHint(block: Block, from: Offset, target: Offset, side: Side, cell: Float, pulse: Float) {
+    if (cell < 2f) return
+    val path = blockPath(block.shape.id, block.shape.cells, cell)
+    translate(from.x, from.y) {
+        drawPath(path, Color.White.copy(alpha = 0.35f + 0.45f * pulse), style = Stroke(cell * (0.08f + 0.06f * pulse)))
+    }
+    translate(target.x, target.y) {
+        drawPath(path, Color.White.copy(alpha = 0.12f))
+        drawPath(
+            path, Color.White.copy(alpha = 0.75f),
+            style = Stroke(cell * 0.04f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(cell * 0.14f, cell * 0.1f))),
+        )
+    }
+    // Arrow from the ghost's centre out through the gate.
+    val cx = target.x + block.shape.cols * cell / 2f
+    val cy = target.y + block.shape.rows * cell / 2f
+    val len = cell * (0.9f + 0.25f * pulse)
+    val (dx, dy) = when (side) {
+        Side.TOP -> 0f to -1f
+        Side.BOTTOM -> 0f to 1f
+        Side.LEFT -> -1f to 0f
+        Side.RIGHT -> 1f to 0f
+    }
+    val start = Offset(cx + dx * (block.shape.cols * cell / 2f) * kotlin.math.abs(dx) + dx * cell * 0.1f, cy + dy * (block.shape.rows * cell / 2f) * kotlin.math.abs(dy) + dy * cell * 0.1f)
+    val tip = Offset(start.x + dx * len, start.y + dy * len)
+    val col = Palette.Gold
+    drawLine(col, start, tip, cell * 0.12f, StrokeCap.Round)
+    val back = Offset(tip.x - dx * cell * 0.3f, tip.y - dy * cell * 0.3f)
+    drawLine(col, tip, Offset(back.x - dy * cell * 0.25f, back.y + dx * cell * 0.25f), cell * 0.12f, StrokeCap.Round)
+    drawLine(col, tip, Offset(back.x + dy * cell * 0.25f, back.y - dx * cell * 0.25f), cell * 0.12f, StrokeCap.Round)
 }

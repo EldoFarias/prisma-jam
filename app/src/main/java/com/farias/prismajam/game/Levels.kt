@@ -18,6 +18,14 @@ class JamLevel(
 object JamLevels {
     const val MAX_COLORS = 7
 
+    // First level where each mechanic can show up.
+    const val STONE_FROM = 8
+    const val ICE_FROM = 12
+    const val ARROW_FROM = 18
+    const val LAYER_FROM = 25
+    const val LOCK_FROM = 35
+    const val TIMED_FROM = 45
+
     /**
      * Today's challenge: a mid/hard level that is the same for everyone on [day] (yyyyMMdd)
      * but different from the regular levels.
@@ -57,7 +65,9 @@ object JamLevels {
             val blocks = built.blocks.size
             // Tight but fair: ~3 s per block plus thinking time per wave, a bit less as levels get harder.
             val raw = (6 + blocks * 2.8f + waves * 4) * (1.15f - 0.3f * d) * (if (hard) 1.15f else 1f)
-            val time = ((raw / 5f).roundToInt() * 5).coerceIn(25, 140)
+            // Timed gates make you wait a little: a few extra seconds each.
+            val waits = built.gates.count { it.timed } * 4
+            val time = (((raw + waits) / 5f).roundToInt() * 5).coerceIn(25, 150)
             return JamLevel(n, built, time, waves)
         }
         // Fallback (practically never): a tiny trivial board.
@@ -91,7 +101,7 @@ object JamLevels {
 
         // Stones
         val stones = HashSet<Cell>()
-        if (n >= 8) {
+        if (n >= STONE_FROM) {
             val count = rnd.nextInt(0, 2 + (d * 4).roundToInt())
             repeat(count) { stones.add(Cell(rnd.nextInt(1, rows - 1), rnd.nextInt(1, cols - 1))) }
         }
@@ -116,7 +126,7 @@ object JamLevels {
                 val hi = (start + gl).coerceAtMost(len - 1)
                 if ((lo..hi).any { slots[it] }) continue
                 for (i in start until start + gl) slots[i] = true
-                gates.add(Gate(side, start, gl, color))
+                gates.add(Gate(side, start, gl, color, timed = n >= TIMED_FROM && rnd.nextFloat() < 0.08f + 0.08f * d))
                 placed++
             }
             if (placed == 0) return null
@@ -153,14 +163,14 @@ object JamLevels {
             if (filled > targetFill * 0.8f && shape.size > 3 && rnd.nextFloat() < 0.6f) continue
             val r = rnd.nextInt(0, rows - shape.rows + 1)
             val c = rnd.nextInt(0, cols - shape.cols + 1)
-            val axis = if (n >= 18 && rnd.nextFloat() < 0.08f + 0.12f * d) {
+            val axis = if (n >= ARROW_FROM && rnd.nextFloat() < 0.08f + 0.12f * d) {
                 if (rnd.nextBoolean()) Axis.HORIZONTAL else Axis.VERTICAL
             } else Axis.BOTH
             val b = Block(nextId, shape, color, r, c, axis)
             if (!board.fits(b, r, c)) continue
             if (board.findExit(b) == null) continue
             board.relocate(b)
-            if (n >= 12 && rnd.nextFloat() < 0.07f + 0.10f * d) wantIce.add(nextId to rnd.nextInt(2, 4 + (d * 3).roundToInt()))
+            if (n >= ICE_FROM && rnd.nextFloat() < 0.07f + 0.10f * d) wantIce.add(nextId to rnd.nextInt(2, 4 + (d * 3).roundToInt()))
             nextId++
             filled += shape.size
             cellsOf[color] = (cellsOf[color] ?: 0) + shape.size
@@ -174,6 +184,38 @@ object JamLevels {
             if (cap >= 1) board.relocate(b.copy(ice = minOf(ice, cap)))
         }
         if (JamSolver.waves(board) < 0) return null
+
+        // Two-layer blocks: an outer shell of another color that has a gate the block fits through.
+        if (n >= LAYER_FROM) {
+            val chance = 0.10f + 0.12f * d
+            for (b in board.blocks.toList()) {
+                if (b.ice > 0 || rnd.nextFloat() >= chance) continue
+                val outer = colors.filter { it != b.color }.filter { oc ->
+                    gates.any { g -> g.color == oc && (if (g.side == Side.TOP || g.side == Side.BOTTOM) b.shape.cols <= g.length else b.shape.rows <= g.length) }
+                }.randomOrNull(rnd) ?: continue
+                board.relocate(b.copy(color = outer, inner = b.color))
+                if (JamSolver.waves(board) < 0) board.relocate(b)
+            }
+        }
+        // Key and padlock pairs.
+        if (n >= LOCK_FROM) {
+            val pairs = if (rnd.nextFloat() < 0.35f + 0.4f * d) 1 + (if (d > 0.6f && rnd.nextBoolean()) 1 else 0) else 0
+            var k = 1
+            repeat(pairs) {
+                val plain = board.blocks.filter { it.lock == 0 && it.key == 0 && it.ice == 0 }
+                if (plain.size < 3) return@repeat
+                for (t in 0 until 12) {
+                    val locked = plain.random(rnd)
+                    val keyBlock = plain.random(rnd)
+                    if (locked.id == keyBlock.id) continue
+                    board.relocate(locked.copy(lock = k))
+                    board.relocate(keyBlock.copy(key = k))
+                    if (JamSolver.waves(board) >= 0) { k++; break }
+                    board.relocate(locked)
+                    board.relocate(keyBlock)
+                }
+            }
+        }
 
         // Tighten: add blocks that cannot leave yet and that shut the way out of a block that could,
         // so only a few moves are possible at any time (a narrow path, close to one order).

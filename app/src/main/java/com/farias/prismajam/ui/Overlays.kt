@@ -292,3 +292,76 @@ fun BannerAd(ads: AdsManager) {
         }
     }
 }
+
+
+/** First time an obstacle appears: what it is and how to beat it, with a small drawing. */
+@Composable
+fun MechanicDialog(m: com.farias.prismajam.game.Mechanic, onClose: () -> Unit) {
+    val (title, text) = when (m) {
+        com.farias.prismajam.game.Mechanic.STONE -> R.string.mech_stone_t to R.string.mech_stone
+        com.farias.prismajam.game.Mechanic.ICE -> R.string.mech_ice_t to R.string.mech_ice
+        com.farias.prismajam.game.Mechanic.ARROW -> R.string.mech_arrow_t to R.string.mech_arrow
+        com.farias.prismajam.game.Mechanic.LAYER -> R.string.mech_layer_t to R.string.mech_layer
+        com.farias.prismajam.game.Mechanic.LOCK -> R.string.mech_lock_t to R.string.mech_lock
+        com.farias.prismajam.game.Mechanic.TIMED -> R.string.mech_timed_t to R.string.mech_timed
+    }
+    DimOverlay {
+        GlassPanel {
+            Text(stringResource(R.string.new_mechanic), style = Styles.glow(16, Palette.Gold, FontWeight.Black))
+            Text(stringResource(title), style = Styles.gradient(28), textAlign = TextAlign.Center)
+            androidx.compose.foundation.Canvas(Modifier.size(150.dp, 100.dp)) { mechanicPicture(m) }
+            Text(
+                stringResource(text),
+                style = Styles.plain(16, Palette.TextPrimary, FontWeight.Medium),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(4.dp))
+            PrimaryButton(stringResource(R.string.got_it)) { onClose() }
+        }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.mechanicPicture(m: com.farias.prismajam.game.Mechanic) {
+    val cell = size.height / 2.4f
+    val shapes = com.farias.prismajam.game.BlockShape.all
+    fun block(shapeId: Int, color: Int, ice: Int = 0, inner: Int = 0, lock: Int = 0, key: Int = 0, axis: com.farias.prismajam.game.Axis = com.farias.prismajam.game.Axis.BOTH) =
+        com.farias.prismajam.game.Block(1, shapes[shapeId], color, 0, 0, axis = axis, ice = ice, inner = inner, lock = lock, key = key)
+    val y = (size.height - cell * 2) / 2f
+    when (m) {
+        com.farias.prismajam.game.Mechanic.STONE -> {
+            drawStone(com.farias.prismajam.game.Cell(0, 0), androidx.compose.ui.geometry.Offset(size.width / 2f - cell, y + cell / 2f), cell * 2)
+        }
+        com.farias.prismajam.game.Mechanic.ICE -> {
+            val b = block(5, 1, ice = 3)
+            val o = androidx.compose.ui.geometry.Offset(size.width / 2f - cell, y)
+            drawJellyBlock(b, o, cell, Palette.block(1))
+            drawIce(b, o, cell)
+        }
+        com.farias.prismajam.game.Mechanic.ARROW -> {
+            val b = block(3, 4, axis = com.farias.prismajam.game.Axis.HORIZONTAL)
+            drawJellyBlock(b, androidx.compose.ui.geometry.Offset(size.width / 2f - cell * 1.5f, y + cell / 2f), cell, Palette.block(4))
+        }
+        com.farias.prismajam.game.Mechanic.LAYER -> {
+            val b = block(5, 2, inner = 3)
+            val o = androidx.compose.ui.geometry.Offset(size.width / 2f - cell, y)
+            drawJellyBlock(b, o, cell, Palette.block(2))
+            drawLayerCore(b, o, cell, Palette.block(3))
+        }
+        com.farias.prismajam.game.Mechanic.LOCK -> {
+            val k = block(0, 6, key = 1)
+            val l = block(5, 5, lock = 1)
+            val ok = androidx.compose.ui.geometry.Offset(size.width / 2f - cell * 2.2f, y + cell / 2f)
+            val ol = androidx.compose.ui.geometry.Offset(size.width / 2f + cell * 0.2f, y)
+            drawJellyBlock(k, ok, cell, Palette.block(6))
+            drawKey(k, ok, cell)
+            drawJellyBlock(l, ol, cell, Palette.block(5))
+            drawLock(l, ol, cell)
+        }
+        com.farias.prismajam.game.Mechanic.TIMED -> {
+            val g = com.farias.prismajam.game.Gate(com.farias.prismajam.game.Side.TOP, 0, 2, 1, timed = true)
+            val frame = cell * 0.42f
+            val o = androidx.compose.ui.geometry.Offset(size.width / 2f - cell, y + cell)
+            drawGate(g, o, cell, 1, 2, frame, Palette.block(1), 0.5f, closed = 0.55f, timed = true)
+        }
+    }
+}

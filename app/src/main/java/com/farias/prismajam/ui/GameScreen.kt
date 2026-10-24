@@ -44,6 +44,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
@@ -107,8 +110,11 @@ fun GameScreen(vm: GameViewModel, ads: AdsManager, onGreatMoment: () -> Unit, on
         }
     }
     LaunchedEffect(vm.showWin) { if (vm.showWin && vm.timeLeft >= vm.timeTotal * 0.5f) onGreatMoment() }
-    BackHandler(enabled = vm.hammerMode) { vm.hammerMode = false }
-    BackHandler(enabled = !vm.hammerMode && !vm.paused && !vm.showWin && !vm.showTimeUp) { vm.paused = true }
+    BackHandler(enabled = vm.hammerMode || vm.scissorsMode) {
+        vm.hammerMode = false
+        vm.scissorsMode = false
+    }
+    BackHandler(enabled = !vm.hammerMode && !vm.scissorsMode && !vm.paused && !vm.showWin && !vm.showTimeUp) { vm.paused = true }
 
     fun pay(p: Power, action: () -> Unit) {
         if (Progress.spend(p.cost)) action() else {
@@ -148,7 +154,11 @@ fun GameScreen(vm: GameViewModel, ads: AdsManager, onGreatMoment: () -> Unit, on
                         TimerBar(vm, compact)
                     }
                 }
-                Board(vm, boardW, boardH) { b -> pay(Power.HAMMER) { vm.smash(b) } }
+                Board(
+                    vm, boardW, boardH,
+                    onHammer = { b -> pay(Power.HAMMER) { vm.smash(b) } },
+                    onScissors = { b -> pay(Power.SCISSORS) { vm.cut(b) } },
+                )
                 // Level 1 tutorial: the hint sits where the powers are, so hide them until the first block leaves.
                 if (!Progress.tutorialDone && vm.level?.number == 1) {
                     Spacer(Modifier.height(powerH))
@@ -156,8 +166,16 @@ fun GameScreen(vm: GameViewModel, ads: AdsManager, onGreatMoment: () -> Unit, on
                     Scaled(ui) {
                         PowerBar(vm, compact) { p ->
                             when (p) {
+                                Power.HINT -> pay(p) { vm.showHint() }
                                 Power.FREEZE -> pay(p) { vm.freeze() }
-                                Power.HAMMER -> vm.hammerMode = !vm.hammerMode
+                                Power.HAMMER -> {
+                                    vm.scissorsMode = false
+                                    vm.hammerMode = !vm.hammerMode
+                                }
+                                Power.SCISSORS -> {
+                                    vm.hammerMode = false
+                                    vm.scissorsMode = !vm.scissorsMode
+                                }
                             }
                         }
                     }
@@ -170,6 +188,8 @@ fun GameScreen(vm: GameViewModel, ads: AdsManager, onGreatMoment: () -> Unit, on
         ParticlesLayer(vm)
         FloatingTexts(vm.fx)
         TutorialLayer(vm)
+
+        vm.intro?.let { m -> MechanicDialog(m) { vm.dismissIntro() } }
 
         AnimatedVisibility(vm.paused, enter = fadeIn(tween(180)), exit = fadeOut(tween(150))) {
             PauseOverlay(vm, ads, onHome)
@@ -283,7 +303,13 @@ private fun TimerBar(vm: GameViewModel, compact: Boolean) {
 // --------------------------------------------------------------------------- board
 
 @Composable
-private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.prismajam.game.Block) -> Unit) {
+private fun Board(
+    vm: GameViewModel,
+    maxW: Dp,
+    maxH: Dp,
+    onHammer: (com.farias.prismajam.game.Block) -> Unit,
+    onScissors: (com.farias.prismajam.game.Block) -> Unit,
+) {
     val rows = vm.rows
     val cols = vm.cols
     // Frame thickness is ~0.42 cell on each side (room for the gates).
@@ -313,12 +339,17 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                     vm.boardOrigin = Offset(f, f)
                     vm.toRoot = { p -> if (coords.isAttached) coords.localToRoot(p) else p }
                 }
-                .pointerInput(vm.hammerMode, vm.level?.number) {
+                .pointerInput(vm.hammerMode, vm.scissorsMode, vm.level?.number) {
                     // Pointer positions arrive in the board's own (untilted) space.
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         if (vm.hammerMode) {
                             vm.hammerTarget(down.position)?.let { onHammer(it) } ?: vm.playInvalid()
+                            return@awaitEachGesture
+                        }
+                        if (vm.scissorsMode) {
+                            vm.hammerTarget(down.position)?.takeIf { it.shape.size >= 2 && !it.stuck }
+                                ?.let { onScissors(it) } ?: vm.playInvalid()
                             return@awaitEachGesture
                         }
                         vm.touchDown(down.position)
@@ -348,7 +379,11 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
 
             drawBoardBase(
                 o, c, rows, cols, f, slab.toPx(),
-                if (vm.hammerMode) Palette.Danger.copy(alpha = 0.5f + 0.4f * pulseT) else null,
+                when {
+                    vm.hammerMode -> Palette.Danger.copy(alpha = 0.5f + 0.4f * pulseT)
+                    vm.scissorsMode -> Palette.Cyan.copy(alpha = 0.5f + 0.4f * pulseT)
+                    else -> null
+                },
             )
 
             // Gates (flash when a block goes through)
@@ -359,7 +394,11 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                         flash = maxOf(flash, 1f - ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f))
                     }
                 }
-                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash, bar = g.side != Side.BOTTOM)
+                val gi = vm.gates.indexOf(g)
+                drawGate(
+                    g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash,
+                    bar = g.side != Side.BOTTOM, closed = vm.gateClosedness(gi), timed = g.timed,
+                )
             }
             for (s in vm.stones) drawStone(s, o, c)
 
@@ -384,6 +423,13 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                 var color = Palette.block(b.color)
                 if (overT > 0f) color = lerp(color, Palette.gray(color), 0.7f)
                 drawJellyBlock(b, pos, c, color, lifted = b.id == vm.dragging)
+                if (b.inner != 0) {
+                    var inner = Palette.block(b.inner)
+                    if (overT > 0f) inner = lerp(inner, Palette.gray(inner), 0.7f)
+                    drawLayerCore(b, pos, c, inner)
+                }
+                if (b.lock > 0) drawLock(b, pos, c)
+                if (b.key > 0) drawKey(b, pos, c)
                 if (b.ice > 0) {
                     drawIce(b, pos, c)
                     val text = measurer.measure(
@@ -399,6 +445,17 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                     )
                 }
             }
+            // Hint: glow on the block, ghost where to slide it, arrow out through the gate.
+            vm.hint?.let { h ->
+                val hb = vm.blocks.firstOrNull { it.id == h.blockId }
+                if (hb != null) {
+                    val v = vm.visual[hb.id] ?: Offset(hb.c.toFloat(), hb.r.toFloat())
+                    drawHint(
+                        hb, Offset(o.x + v.x * c, o.y + v.y * c), Offset(o.x + h.target.c * c, o.y + h.target.r * c),
+                        h.side, c, pulseT,
+                    )
+                }
+            }
             // The front gates sit in front of the blocks (nearer the player).
             for (g in vm.gates) {
                 if (g.side != Side.BOTTOM) continue
@@ -408,7 +465,10 @@ private fun Board(vm: GameViewModel, maxW: Dp, maxH: Dp, onHammer: (com.farias.p
                         flash = maxOf(flash, 1f - ((vm.fx.now - e.start) / GameViewModel.EXIT_NANOS.toFloat()).coerceIn(0f, 1f))
                     }
                 }
-                drawGate(g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash, spill = false)
+                drawGate(
+                    g, o, c, rows, cols, f, Palette.block(g.color), pulseT, flash,
+                    spill = false, closed = vm.gateClosedness(vm.gates.indexOf(g)), timed = g.timed,
+                )
             }
             // Exit burst: shockwave at the gate, glass shards and glitter.
             for (e in vm.exits) {
@@ -438,40 +498,78 @@ private fun PowerBar(vm: GameViewModel, compact: Boolean, onUse: (Power) -> Unit
         Modifier
             .fillMaxWidth()
             .height(if (compact) 62.dp else 76.dp)
-            .padding(top = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            .padding(top = 8.dp, start = 16.dp, end = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     ) {
-        PowerButton(vm, Power.FREEZE, stringResource(R.string.power_freeze), onUse) { FreezeIcon(it) }
-        PowerButton(vm, Power.HAMMER, stringResource(R.string.power_hammer), onUse) { HammerIcon(it) }
+        PowerButton(vm, Power.HINT, stringResource(R.string.power_hint), compact, onUse) { HintIcon(it) }
+        PowerButton(vm, Power.FREEZE, stringResource(R.string.power_freeze), compact, onUse) { FreezeIcon(it) }
+        PowerButton(vm, Power.HAMMER, stringResource(R.string.power_hammer), compact, onUse) { HammerIcon(it) }
+        PowerButton(vm, Power.SCISSORS, stringResource(R.string.power_scissors), compact, onUse) { ScissorsIcon(it) }
     }
 }
 
 @Composable
-private fun PowerButton(vm: GameViewModel, power: Power, label: String, onUse: (Power) -> Unit, icon: @Composable (Modifier) -> Unit) {
-    val active = power == Power.HAMMER && vm.hammerMode
+private fun RowScope.PowerButton(
+    vm: GameViewModel,
+    power: Power,
+    label: String,
+    compact: Boolean,
+    onUse: (Power) -> Unit,
+    icon: @Composable (Modifier) -> Unit,
+) {
+    val active = (power == Power.HAMMER && vm.hammerMode) || (power == Power.SCISSORS && vm.scissorsMode)
+    val accent = if (power == Power.SCISSORS) Palette.Cyan else Palette.Danger
     val enabled = active || vm.powerAvailable(power)
-    val shape = RoundedCornerShape(18.dp)
-    Row(
+    val shape = RoundedCornerShape(16.dp)
+    Column(
         Modifier
+            .weight(1f)
+            .widthIn(max = 96.dp)
             .fillMaxHeight()
             .alpha(if (enabled) 1f else 0.4f)
             .clip(shape)
-            .background(if (active) Palette.Danger.copy(alpha = 0.25f) else Palette.Glass)
-            .border(if (active) 2.dp else 1.dp, if (active) Palette.Danger else Palette.GlassBorder, shape)
+            .background(if (active) accent.copy(alpha = 0.25f) else Palette.Glass)
+            .border(if (active) 2.dp else 1.dp, if (active) accent else Palette.GlassBorder, shape)
             .clickable(enabled = enabled) { onUse(power) }
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 4.dp, vertical = 3.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        icon(Modifier.size(28.dp))
-        Spacer(Modifier.width(10.dp))
-        Column {
-            FitText(label, Styles.plain(14, Palette.TextPrimary, FontWeight.Bold), minSp = 10f)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CoinIcon(Modifier.size(13.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(power.cost.toString(), style = Styles.plain(13, Palette.Gold, FontWeight.Bold))
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            icon(Modifier.size(if (compact) 20.dp else 24.dp))
+            Spacer(Modifier.width(5.dp))
+            CoinIcon(Modifier.size(11.dp))
+            Spacer(Modifier.width(2.dp))
+            Text(power.cost.toString(), style = Styles.plain(12, Palette.Gold, FontWeight.Bold))
         }
+        if (!compact) Spacer(Modifier.height(2.dp))
+        FitText(label, Styles.plain(12, Palette.TextPrimary, FontWeight.Bold), minSp = 8f)
+    }
+}
+
+@Composable
+fun HintIcon(modifier: Modifier = Modifier) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        drawCircle(Palette.Gold.copy(alpha = 0.3f), w * 0.42f, Offset(w * 0.5f, h * 0.4f))
+        drawCircle(Brush.verticalGradient(listOf(Color(0xFFFEF9C3), Palette.Gold), 0f, h * 0.7f), w * 0.28f, Offset(w * 0.5f, h * 0.4f))
+        drawRoundRect(Color(0xFFD1D5DB), Offset(w * 0.36f, h * 0.66f), Size(w * 0.28f, h * 0.2f), CornerRadius(w * 0.05f))
+        drawLine(Color(0xFF6B7280), Offset(w * 0.38f, h * 0.76f), Offset(w * 0.62f, h * 0.76f), w * 0.04f)
+    }
+}
+
+@Composable
+fun ScissorsIcon(modifier: Modifier = Modifier) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val steel = Brush.linearGradient(listOf(Color(0xFFF3F4F6), Color(0xFF9CA3AF)))
+        drawLine(steel, Offset(w * 0.25f, h * 0.2f), Offset(w * 0.78f, h * 0.68f), w * 0.1f, StrokeCap.Round)
+        drawLine(steel, Offset(w * 0.75f, h * 0.2f), Offset(w * 0.22f, h * 0.68f), w * 0.1f, StrokeCap.Round)
+        drawCircle(Palette.Cyan, w * 0.13f, Offset(w * 0.22f, h * 0.78f), style = Stroke(w * 0.07f))
+        drawCircle(Palette.Cyan, w * 0.13f, Offset(w * 0.78f, h * 0.78f), style = Stroke(w * 0.07f))
+        drawCircle(Color(0xFF4B5563), w * 0.05f, Offset(w * 0.5f, h * 0.44f))
     }
 }
 

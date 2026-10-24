@@ -101,6 +101,7 @@ object Progress {
         chestRun = prefs.getInt("chest_run", 0)
         dailyLastDay = prefs.getInt("daily_last_day", 0)
         dailyRun = prefs.getInt("daily_run", 0)
+        seenMechanics = prefs.getStringSet("seen_mechanics", emptySet())?.toSet() ?: emptySet()
         loadStars()
     }
 
@@ -269,6 +270,16 @@ object Progress {
         saveMissions()
         addCoins(m.reward)
         return m.reward
+    }
+
+    // ------------------------------------------------------------------ mechanics already introduced
+
+    var seenMechanics by mutableStateOf(setOf<String>())
+        private set
+
+    fun markMechanicSeen(name: String) {
+        seenMechanics = seenMechanics + name
+        prefs.edit().putStringSet("seen_mechanics", seenMechanics).apply()
     }
 
     // ------------------------------------------------------------------ stars per level

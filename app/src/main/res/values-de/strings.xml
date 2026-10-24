@@ -76,4 +76,19 @@
     <string name="daily_complete">CHALLENGE GESCHAFFT!</string>
     <string name="press_back_exit">Zum Beenden erneut Zurück drücken</string>
     <string name="play">Spielen</string>
+    <string name="power_hint">Tipp</string>
+    <string name="power_scissors">Schere</string>
+    <string name="new_mechanic">Neu!</string>
+    <string name="mech_stone_t">Stein</string>
+    <string name="mech_stone">Steine bewegen sich nie. Plane einen Weg drumherum.</string>
+    <string name="mech_ice_t">Gefrorener Block</string>
+    <string name="mech_ice">Die Zahl sinkt mit jedem Block, der rausgeht. Bei 0 taut er auf und kann sich bewegen.</string>
+    <string name="mech_arrow_t">Richtungsblock</string>
+    <string name="mech_arrow">Blöcke mit Pfeilen gleiten nur in die gezeigte Richtung: seitwärts oder hoch und runter.</string>
+    <string name="mech_layer_t">Zweischichtiger Block</string>
+    <string name="mech_layer">Zuerst durch ein Tor der äußeren Farbe: Die Hülle bricht und er nimmt die innere Farbe an. Dann zum neuen Tor.</string>
+    <string name="mech_lock_t">Schlüssel und Schloss</string>
+    <string name="mech_lock">Der Block mit Schloss bewegt sich nicht. Bring zuerst den Block mit dem Schlüssel raus.</string>
+    <string name="mech_timed_t">Zeittor</string>
+    <string name="mech_timed">Tore mit Uhr öffnen und schließen sich von selbst. Warte auf den richtigen Moment.</string>
 </resources>

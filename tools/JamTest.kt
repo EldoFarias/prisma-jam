@@ -21,7 +21,7 @@ fun playByStepping(level: JamLevel): Boolean {
         check(target in prev, "path exists")
         val path = ArrayList<Cell>(); var cur: Cell? = target; while (cur != null) { path.add(cur); cur = prev[cur] }; path.reverse()
         for (i in 1 until path.size) { val s = b.step(blk.id, path[i].r - path[i-1].r, path[i].c - path[i-1].c); check(s != null, "step ok") }
-        check(b.exit(blk.id, side), "exit ok")
+        check(b.exit(blk.id, side) != ExitResult.NONE, "exit ok")
     }
     return b.isCleared
 }
@@ -34,7 +34,7 @@ fun main() {
     val board = JamBoard(5, 5, emptySet(), g, listOf(Block(1, sq, 1, 0, 0), Block(2, bar3, 1, 4, 0, ice = 1)))
     check(board.exitGate(board.block(1)!!, Side.TOP) != null, "2x2 fits 2-wide gate")
     check(board.findExit(board.block(2)!!) == null, "iced block frozen")
-    check(board.exit(1, Side.TOP), "exit")
+    check(board.exit(1, Side.TOP) == ExitResult.GONE, "exit")
     check(board.block(2)!!.ice == 0, "thawed")
     check(board.findExit(board.block(2)!!) == null, "bar3 too wide for 2-gate")
 

@@ -6,7 +6,7 @@ import android.media.SoundPool
 import com.farias.prismajam.R
 import com.farias.prismajam.data.Progress
 
-enum class Sfx { PICK, PLACE, CLEAR, COMBO, INVALID, GAME_OVER, RECORD, REVIVE, BOMB, COIN, WHOOSH }
+enum class Sfx { PICK, PLACE, CLEAR, COMBO, INVALID, GAME_OVER, RECORD, REVIVE, BOMB, COIN, WHOOSH, GLASS }
 
 /** Short sound effects through SoundPool (low latency, game audio attributes). One per app. */
 class SoundManager private constructor(context: Context) {
@@ -25,6 +25,7 @@ class SoundManager private constructor(context: Context) {
         Sfx.PICK to pool.load(context, R.raw.sfx_pick, 1),
         Sfx.PLACE to pool.load(context, R.raw.sfx_place, 1),
         Sfx.CLEAR to pool.load(context, R.raw.sfx_clear, 1),
+        Sfx.GLASS to pool.load(context, R.raw.sfx_glass, 1),
         Sfx.COMBO to pool.load(context, R.raw.sfx_combo, 1),
         Sfx.INVALID to pool.load(context, R.raw.sfx_invalid, 1),
         Sfx.GAME_OVER to pool.load(context, R.raw.sfx_gameover, 1),

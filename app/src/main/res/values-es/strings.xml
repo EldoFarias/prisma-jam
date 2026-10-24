@@ -76,4 +76,19 @@
     <string name="daily_complete">¡DESAFÍO COMPLETADO!</string>
     <string name="press_back_exit">Pulsa atrás otra vez para salir</string>
     <string name="play">Jugar</string>
+    <string name="power_hint">Pista</string>
+    <string name="power_scissors">Tijeras</string>
+    <string name="new_mechanic">¡Nuevo!</string>
+    <string name="mech_stone_t">Piedra</string>
+    <string name="mech_stone">Las piedras nunca se mueven. Planea un camino alrededor.</string>
+    <string name="mech_ice_t">Bloque congelado</string>
+    <string name="mech_ice">El número baja cada vez que sale otro bloque. En 0 se derrite y puede moverse.</string>
+    <string name="mech_arrow_t">Bloque de dirección</string>
+    <string name="mech_arrow">Los bloques con flechas solo se deslizan en la dirección indicada: a los lados o arriba y abajo.</string>
+    <string name="mech_layer_t">Bloque de dos capas</string>
+    <string name="mech_layer">Primero pásalo por una puerta del color de fuera: la capa se rompe y toma el color de dentro. Luego llévalo a su nueva puerta.</string>
+    <string name="mech_lock_t">Llave y candado</string>
+    <string name="mech_lock">El bloque con candado no se mueve. Saca primero el bloque con la llave para abrirlo.</string>
+    <string name="mech_timed_t">Puerta temporizada</string>
+    <string name="mech_timed">Las puertas con reloj se abren y cierran solas. Espera el momento justo.</string>
 </resources>

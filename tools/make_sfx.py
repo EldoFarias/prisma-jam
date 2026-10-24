@@ -115,3 +115,21 @@ w = np.convolve(rng.normal(0, 1, len(x)), np.ones(40) / 40, mode="same") * np.si
 save("sfx_whoosh", w, 0.45)
 
 print("ok", sorted(os.listdir(OUT)))
+
+# glass: a crisp crack followed by a shower of tiny glass tinkles (block bursting through its gate)
+g_rng = np.random.default_rng(11)
+total = 0.9
+n = int(SR * 0.05)
+crack = g_rng.normal(0, 1, n)
+crack = np.diff(np.concatenate([[0], crack]))  # brighter (high-passed) noise
+crack *= env(n, 0.0005, 70)
+body = tone(2600, 0.12, decay=38, harmonics=((1, 1), (1.47, 0.6), (2.3, 0.35), (3.1, 0.2)))
+parts = [(0, crack * 1.4), (0.002, body * 0.5)]
+for i in range(26):
+    start = 0.01 + (g_rng.random() ** 1.8) * 0.65
+    f0 = 2400 + g_rng.random() * 5200
+    d = 0.05 + g_rng.random() * 0.12
+    amp = 0.25 + 0.5 * g_rng.random() * (1 - start / 0.7)
+    ping = tone(f0, d, decay=30 + g_rng.random() * 40, harmonics=((1, 1), (1.53, 0.4), (2.71, 0.2)), attack=0.0008)
+    parts.append((start, ping * amp))
+save("sfx_glass", mix(parts, total), 0.8)

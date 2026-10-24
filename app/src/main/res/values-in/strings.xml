@@ -76,4 +76,19 @@
     <string name="daily_complete">TANTANGAN SELESAI!</string>
     <string name="press_back_exit">Tekan kembali sekali lagi untuk keluar</string>
     <string name="play">Main</string>
+    <string name="power_hint">Petunjuk</string>
+    <string name="power_scissors">Gunting</string>
+    <string name="new_mechanic">Baru!</string>
+    <string name="mech_stone_t">Batu</string>
+    <string name="mech_stone">Batu tidak pernah bergerak. Rencanakan jalan di sekitarnya.</string>
+    <string name="mech_ice_t">Blok beku</string>
+    <string name="mech_ice">Angkanya berkurang setiap ada blok keluar. Di 0 ia mencair dan bisa bergerak.</string>
+    <string name="mech_arrow_t">Blok satu arah</string>
+    <string name="mech_arrow">Blok berpanah hanya bergeser ke arah yang ditunjukkan: ke samping atau atas-bawah.</string>
+    <string name="mech_layer_t">Blok dua lapis</string>
+    <string name="mech_layer">Lewatkan dulu ke gerbang warna luar: cangkangnya pecah dan ia berganti ke warna dalam. Lalu cari gerbang barunya.</string>
+    <string name="mech_lock_t">Kunci dan gembok</string>
+    <string name="mech_lock">Blok bergembok tak bisa bergerak. Keluarkan dulu blok berkunci untuk membukanya.</string>
+    <string name="mech_timed_t">Gerbang berwaktu</string>
+    <string name="mech_timed">Gerbang berjam membuka dan menutup sendiri. Tunggu saat yang tepat.</string>
 </resources>

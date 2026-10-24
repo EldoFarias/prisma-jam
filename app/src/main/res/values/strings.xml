@@ -77,4 +77,19 @@
     <string name="daily_complete">CHALLENGE COMPLETE!</string>
     <string name="press_back_exit">Press back again to exit</string>
     <string name="play">Play</string>
+    <string name="power_hint">Hint</string>
+    <string name="power_scissors">Scissors</string>
+    <string name="new_mechanic">New!</string>
+    <string name="mech_stone_t">Stone</string>
+    <string name="mech_stone">Stones never move. Plan a way around them.</string>
+    <string name="mech_ice_t">Frozen block</string>
+    <string name="mech_ice">The number counts down each time another block leaves. At 0 it melts and can move.</string>
+    <string name="mech_arrow_t">One-way block</string>
+    <string name="mech_arrow">Blocks with arrows slide only in the direction shown: across, or up and down.</string>
+    <string name="mech_layer_t">Two-layer block</string>
+    <string name="mech_layer">First take it through a gate of the outer color: the shell breaks and it takes the inner color. Then find its new gate.</string>
+    <string name="mech_lock_t">Key and padlock</string>
+    <string name="mech_lock">The padlocked block can\'t move. Get the block with the key out first to open it.</string>
+    <string name="mech_timed_t">Timed gate</string>
+    <string name="mech_timed">Gates with a clock open and close by themselves. Wait for the right moment.</string>
 </resources>
