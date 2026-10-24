@@ -91,4 +91,6 @@
     <string name="mech_lock">O bloco com cadeado não se move. Tire primeiro o bloco com a chave para abrir.</string>
     <string name="mech_timed_t">Porta com tempo</string>
     <string name="mech_timed">Portas com relógio abrem e fecham sozinhas. Espere o momento certo.</string>
+    <string name="world_x">Mundo %1$d</string>
+    <string name="trail_chest">Baú do caminho</string>
 </resources>

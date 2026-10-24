@@ -28,7 +28,7 @@ private val STARS: List<Star> = Random(11).let { rnd ->
 
 /** Animated aurora background in the colors of the current theme (with stars on some themes). */
 @Composable
-fun AuroraBackground(modifier: Modifier = Modifier.fillMaxSize()) {
+fun AuroraBackground(modifier: Modifier = Modifier.fillMaxSize(), override: GameTheme? = null) {
     val transition = rememberInfiniteTransition(label = "aurora")
     val phase by transition.animateFloat(
         initialValue = 0f,
@@ -37,7 +37,7 @@ fun AuroraBackground(modifier: Modifier = Modifier.fillMaxSize()) {
         label = "phase",
     )
     Canvas(modifier) {
-        val theme = Palette.theme
+        val theme = override ?: Palette.theme
         drawRect(Brush.verticalGradient(listOf(theme.bgTop, theme.bgBottom)))
         val a = phase * 2f * PI.toFloat()
         val w = size.width

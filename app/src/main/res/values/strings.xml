@@ -92,4 +92,6 @@
     <string name="mech_lock">The padlocked block can\'t move. Get the block with the key out first to open it.</string>
     <string name="mech_timed_t">Timed gate</string>
     <string name="mech_timed">Gates with a clock open and close by themselves. Wait for the right moment.</string>
+    <string name="world_x">World %1$d</string>
+    <string name="trail_chest">Trail chest</string>
 </resources>

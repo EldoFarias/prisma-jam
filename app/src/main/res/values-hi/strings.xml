@@ -91,4 +91,6 @@
     <string name="mech_lock">ताले वाला ब्लॉक नहीं हिलता। पहले चाबी वाले ब्लॉक को बाहर निकालें।</string>
     <string name="mech_timed_t">टाइमर गेट</string>
     <string name="mech_timed">घड़ी वाले गेट अपने आप खुलते और बंद होते हैं। सही पल का इंतज़ार करें।</string>
+    <string name="world_x">दुनिया %1$d</string>
+    <string name="trail_chest">रास्ते का खज़ाना</string>
 </resources>

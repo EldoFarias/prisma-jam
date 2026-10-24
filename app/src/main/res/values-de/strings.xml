@@ -91,4 +91,6 @@
     <string name="mech_lock">Der Block mit Schloss bewegt sich nicht. Bring zuerst den Block mit dem Schlüssel raus.</string>
     <string name="mech_timed_t">Zeittor</string>
     <string name="mech_timed">Tore mit Uhr öffnen und schließen sich von selbst. Warte auf den richtigen Moment.</string>
+    <string name="world_x">Welt %1$d</string>
+    <string name="trail_chest">Truhe am Weg</string>
 </resources>

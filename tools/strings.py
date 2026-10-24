@@ -308,6 +308,19 @@ ADD2 = {
 for _l, _kv in ADD2.items():
     T[_l].update(_kv)
 
+ADD3 = {
+"en": dict(world_x="World %1$d", trail_chest="Trail chest"),
+"pt": dict(world_x="Mundo %1$d", trail_chest="Baú do caminho"),
+"es": dict(world_x="Mundo %1$d", trail_chest="Cofre del camino"),
+"fr": dict(world_x="Monde %1$d", trail_chest="Coffre du chemin"),
+"de": dict(world_x="Welt %1$d", trail_chest="Truhe am Weg"),
+"tr": dict(world_x="Dünya %1$d", trail_chest="Yol sandığı"),
+"in": dict(world_x="Dunia %1$d", trail_chest="Peti jalan"),
+"hi": dict(world_x="दुनिया %1$d", trail_chest="रास्ते का खज़ाना"),
+}
+for _l, _kv in ADD3.items():
+    T[_l].update(_kv)
+
 DIRS = {"en": "values", "pt": "values-pt", "es": "values-es", "fr": "values-fr", "de": "values-de",
         "tr": "values-tr", "in": "values-in", "hi": "values-hi"}
 

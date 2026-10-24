@@ -91,4 +91,6 @@
     <string name="mech_lock">Le bloc cadenassé ne bouge pas. Fais d\'abord sortir le bloc avec la clé pour l\'ouvrir.</string>
     <string name="mech_timed_t">Porte minutée</string>
     <string name="mech_timed">Les portes avec une horloge s\'ouvrent et se ferment seules. Attends le bon moment.</string>
+    <string name="world_x">Monde %1$d</string>
+    <string name="trail_chest">Coffre du chemin</string>
 </resources>

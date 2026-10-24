@@ -30,12 +30,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,8 +68,13 @@ private const val LOCKED_AHEAD = 10
 /** Horizontal position (0..1) of a level node along the winding path. */
 private fun pathX(level: Int): Float = 0.5f + 0.28f * sin(level * 0.85f)
 
-/** Every 10th level is a milestone (crown, gold node). */
+/** Every 10th level is a milestone (crown, gold node): the hard ones. */
 private fun isMilestone(n: Int) = n % 10 == 0
+
+/** Worlds of 20 levels, each dressed in one of the themes' colors. */
+const val WORLD_SIZE = 20
+fun worldOf(n: Int) = (n - 1) / WORLD_SIZE
+fun worldTheme(world: Int): GameTheme = Palette.all[world % Palette.all.size]
 
 /** Level map: a winding trail of levels with the stars earned on each; the current one pulses. */
 @Composable
@@ -75,9 +84,10 @@ fun MapScreen(onBack: () -> Unit, onPlay: (Int) -> Unit) {
     val shown = current + LOCKED_AHEAD
     val list = rememberLazyListState()
     val density = LocalDensity.current
+    var chest by remember { mutableStateOf<Int?>(null) }
 
     Box(Modifier.fillMaxSize()) {
-        AuroraBackground()
+        AuroraBackground(override = worldTheme(worldOf(current)))
         Column(
             Modifier
                 .fillMaxSize()
@@ -117,9 +127,31 @@ fun MapScreen(onBack: () -> Unit, onPlay: (Int) -> Unit) {
                 ) {
                     items(shown, key = { shown - it }) { i ->
                         val n = shown - i
-                        MapRow(n, shown, current, mapWidth) { onPlay(n) }
+                        MapRow(n, shown, current, mapWidth, onLevel = { onPlay(n) }, onChest = { chest = n })
                     }
                 }
+            }
+        }
+        chest?.let { n ->
+            TrailChestDialog(n) { chest = null }
+        }
+    }
+}
+
+@Composable
+private fun TrailChestDialog(n: Int, onClose: () -> Unit) {
+    DimOverlay {
+        GlassPanel {
+            Text(stringResource(R.string.trail_chest), style = Styles.gradient(26))
+            ChestIcon(Modifier.size(84.dp), shaking = true)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CoinIcon(Modifier.size(24.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("+${Progress.trailReward(n)}", style = Styles.glow(24, Palette.Gold, FontWeight.Black))
+            }
+            PrimaryButton(stringResource(R.string.claim)) {
+                Progress.openTrailChest(n)
+                onClose()
             }
         }
     }
@@ -143,7 +175,8 @@ private fun StarPill(stars: Int) {
 }
 
 @Composable
-private fun MapRow(n: Int, shown: Int, current: Int, width: Dp, onLevel: () -> Unit) {
+private fun MapRow(n: Int, shown: Int, current: Int, width: Dp, onLevel: () -> Unit, onChest: () -> Unit) {
+    val nodeOnRight = pathX(n) > 0.5f
     Box(
         Modifier
             .fillMaxWidth()
@@ -155,7 +188,72 @@ private fun MapRow(n: Int, shown: Int, current: Int, width: Dp, onLevel: () -> U
             if (n < shown) pathHalf(c, Offset(size.width * (pathX(n) + pathX(n + 1)) / 2f, 0f), unlocked = n + 1 <= current)
             if (n > 1) pathHalf(c, Offset(size.width * (pathX(n) + pathX(n - 1)) / 2f, row), unlocked = n <= current)
         }
+        val world = worldOf(n)
+        if ((n - 1) % WORLD_SIZE == 0) {
+            WorldBanner(
+                world,
+                Modifier
+                    .align(if (nodeOnRight) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(horizontal = 14.dp),
+            )
+        } else if (n % 5 == 0) {
+            TrailChest(
+                n,
+                Modifier
+                    .align(if (nodeOnRight) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(horizontal = 28.dp),
+                onChest,
+            )
+        }
         LevelNode(n, current, width, onLevel)
+    }
+}
+
+/** World name card at the start of each world. */
+@Composable
+private fun WorldBanner(world: Int, modifier: Modifier) {
+    val theme = worldTheme(world)
+    val accent = theme.aurora.first
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        modifier = modifier
+            .width(112.dp)
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(accent.copy(alpha = 0.35f), Color(0x66110B2A))))
+            .border(1.dp, accent.copy(alpha = 0.8f), shape)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(R.string.world_x, world + 1), style = Styles.plain(11, Palette.TextSecondary, FontWeight.Bold))
+        FitText(stringResource(theme.nameRes), Styles.glow(16, Palette.TextPrimary, FontWeight.Black), minSp = 10f)
+        Spacer(Modifier.height(4.dp))
+        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(3.dp)) {
+            for (i in 0 until 4) {
+                Box(
+                    Modifier
+                        .size(12.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(theme.blocks[(i * 2) % theme.blocks.size]),
+                )
+            }
+        }
+    }
+}
+
+/** Chest every 5 levels: wiggles when the level is done and not opened yet. */
+@Composable
+private fun TrailChest(n: Int, modifier: Modifier, onOpen: () -> Unit) {
+    val ready = Progress.trailChestReady(n)
+    val opened = n in Progress.trailChests
+    Box(
+        modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .clickable(enabled = ready, onClick = onOpen),
+        contentAlignment = Alignment.Center,
+    ) {
+        ChestIcon(Modifier.size(42.dp).alpha(if (ready) 1f else 0.4f), shaking = ready)
+        if (opened) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF34D399), modifier = Modifier.size(22.dp))
     }
 }
 

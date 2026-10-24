@@ -91,4 +91,6 @@
     <string name="mech_lock">El bloque con candado no se mueve. Saca primero el bloque con la llave para abrirlo.</string>
     <string name="mech_timed_t">Puerta temporizada</string>
     <string name="mech_timed">Las puertas con reloj se abren y cierran solas. Espera el momento justo.</string>
+    <string name="world_x">Mundo %1$d</string>
+    <string name="trail_chest">Cofre del camino</string>
 </resources>

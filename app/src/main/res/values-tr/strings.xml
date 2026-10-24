@@ -91,4 +91,6 @@
     <string name="mech_lock">Kilitli blok hareket etmez. Açmak için önce anahtarlı bloğu çıkar.</string>
     <string name="mech_timed_t">Zamanlı kapı</string>
     <string name="mech_timed">Saatli kapılar kendiliğinden açılıp kapanır. Doğru anı bekle.</string>
+    <string name="world_x">Dünya %1$d</string>
+    <string name="trail_chest">Yol sandığı</string>
 </resources>

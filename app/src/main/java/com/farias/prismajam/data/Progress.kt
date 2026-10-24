@@ -102,6 +102,7 @@ object Progress {
         dailyLastDay = prefs.getInt("daily_last_day", 0)
         dailyRun = prefs.getInt("daily_run", 0)
         seenMechanics = prefs.getStringSet("seen_mechanics", emptySet())?.toSet() ?: emptySet()
+        trailChests = prefs.getStringSet("trail_chests", emptySet())?.mapNotNull { it.toIntOrNull() }?.toSet() ?: emptySet()
         loadStars()
     }
 
@@ -280,6 +281,24 @@ object Progress {
     fun markMechanicSeen(name: String) {
         seenMechanics = seenMechanics + name
         prefs.edit().putStringSet("seen_mechanics", seenMechanics).apply()
+    }
+
+    // ------------------------------------------------------------------ trail chests on the map (every 5 levels)
+
+    var trailChests by mutableStateOf(setOf<Int>())
+        private set
+
+    fun trailReward(n: Int): Int = (20 + n / 5 * 3).coerceAtMost(90)
+
+    fun trailChestReady(n: Int): Boolean = n % 5 == 0 && n < level && n !in trailChests
+
+    fun openTrailChest(n: Int): Int {
+        if (!trailChestReady(n)) return 0
+        trailChests = trailChests + n
+        prefs.edit().putStringSet("trail_chests", trailChests.map { it.toString() }.toSet()).apply()
+        val reward = trailReward(n)
+        addCoins(reward)
+        return reward
     }
 
     // ------------------------------------------------------------------ stars per level
