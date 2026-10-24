@@ -74,7 +74,7 @@ private fun isMilestone(n: Int) = n % 10 == 0
 /** Worlds of 20 levels, each dressed in one of the themes' colors. */
 const val WORLD_SIZE = 20
 fun worldOf(n: Int) = (n - 1) / WORLD_SIZE
-fun worldTheme(world: Int): GameTheme = Palette.all[world % Palette.all.size]
+fun worldTheme(world: Int): GameTheme = Themes.all[world % Themes.all.size]
 
 /** Level map: a winding trail of levels with the stars earned on each; the current one pulses. */
 @Composable
@@ -213,7 +213,7 @@ private fun MapRow(n: Int, shown: Int, current: Int, width: Dp, onLevel: () -> U
 @Composable
 private fun WorldBanner(world: Int, modifier: Modifier) {
     val theme = worldTheme(world)
-    val accent = theme.aurora.first
+    val accent = theme.aurora.first()
     val shape = RoundedCornerShape(16.dp)
     Column(
         modifier = modifier
