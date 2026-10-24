@@ -9,7 +9,7 @@ Roteiro do Play Console com as respostas que valem para este app. Tudo que é te
 | AAB assinado (release, IDs reais do AdMob) | GitHub Actions → *Build Android* → artefato `PrismaJam-release-aab` (`gh workflow run android.yml`) |
 | Ícone 512x512 | `store/icon-512.png` |
 | Gráfico de destaque 1024x500 | `store/feature-graphic-1024x500.png` |
-| Capturas de tela (7 por idioma, 1080x1920) | `store/screenshots/<idioma>/` *(último passo, ainda a fazer)* |
+| Capturas de tela (5 por idioma, 1080x1920, com legenda) | `python3 store/make_screenshots.py <pasta com os phone-*.png da release telas>` → `store/screenshots/<idioma>/` (fora do git) |
 | Nome, descrição curta e completa (8 idiomas) | `store/listings/<idioma>/` |
 | Política de privacidade | https://eldofarias.github.io/prisma-jam/privacy.html |
 | app-ads.txt | https://eldofarias.github.io/app-ads.txt |
@@ -77,7 +77,7 @@ Play Console → **Criar app**
 para en-US, es-ES, fr-FR, de-DE, tr-TR, id, hi-IN):
 - Nome do app, descrição curta e completa: copiar de `store/listings/<idioma>/`
 - Ícone: `store/icon-512.png` · Gráfico de destaque: `store/feature-graphic-1024x500.png`
-- Capturas de tela do telefone: `store/screenshots/<idioma>/` (as 7, na ordem 1 → 7)
+- Capturas de tela do telefone: `store/screenshots/<idioma>/` (as 5, na ordem 1 → 5; o Console embaralha ao enviar, arraste para reordenar)
 - Tablet: pode usar as mesmas capturas (opcional).
 
 ## 4. Países e preço
