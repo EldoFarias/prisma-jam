@@ -93,4 +93,5 @@
     <string name="mech_timed">Tore mit Uhr öffnen und schließen sich von selbst. Warte auf den richtigen Moment.</string>
     <string name="world_x">Welt %1$d</string>
     <string name="trail_chest">Truhe am Weg</string>
+    <string name="privacy_policy">Datenschutzerklärung</string>
 </resources>

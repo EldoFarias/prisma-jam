@@ -93,4 +93,5 @@
     <string name="mech_timed">Gerbang berjam membuka dan menutup sendiri. Tunggu saat yang tepat.</string>
     <string name="world_x">Dunia %1$d</string>
     <string name="trail_chest">Peti jalan</string>
+    <string name="privacy_policy">Kebijakan privasi</string>
 </resources>

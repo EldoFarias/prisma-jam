@@ -94,4 +94,5 @@
     <string name="mech_timed">Gates with a clock open and close by themselves. Wait for the right moment.</string>
     <string name="world_x">World %1$d</string>
     <string name="trail_chest">Trail chest</string>
+    <string name="privacy_policy">Privacy policy</string>
 </resources>

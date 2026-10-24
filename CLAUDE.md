@@ -27,9 +27,12 @@ adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
   livre no início e muitas rodadas; a seguinte é mais leve. Fases normais: no máximo 2–4 blocos livres no início.
   O gerador monta de trás pra frente e depois "aperta" (blocos que fecham a saída dos livres), sempre conferindo com o solver.
 - Desafio diário: `JamLevels.daily(dia)`, igual para todos no dia; estrelas 1–3 por tempo restante.
-- Pedras (fase 8+) são fixas. Gelo (fase 12+): o número diminui a cada bloco que sai; com 0 o bloco solta.
-  Setas (fase 18+): bloco só anda na horizontal ou vertical.
-- Relógio começa no primeiro toque. Poderes: Congelar (10 s) e Martelo (quebra um bloco). +30 s por vídeo uma vez por fase.
+- Mecânicas (a partir da fase, `JamLevels.*_FROM`): pedra 8, gelo 12 (número cai a cada saída), setas 18 (só um eixo),
+  duas camadas 25 (`inner`: a porta da cor de fora só tira a casca), chave/cadeado 35 (`key`/`lock`), portas com tempo 45
+  (`Gate.timed`, ciclo em `GameViewModel.GATE_*`; o solver ignora o tempo). Na 1ª vez aparece um aviso (`Mechanic`).
+- Relógio começa no primeiro toque. Poderes: Dica (`JamSolver.hint`), Congelar (10 s), Martelo e Tesoura (`JamBoard.cut`).
+  +30 s por vídeo uma vez por fase.
+- Mapa (`ui/MapScreen.kt`): mundos de 20 fases com as cores dos temas, baú a cada 5 fases, coroa nas fases difíceis.
 
 ## Arquitetura
 
@@ -61,4 +64,6 @@ adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
 ## Pendências
 
 1. Testar no celular e ajustar dificuldade/tempo das fases.
-2. Publicação: política de privacidade, textos/prints da loja, keystore + secrets `KEYSTORE_*`, IDs reais do AdMob.
+2. Publicação (roteiro em `store/PUBLICAR.md`): textos da loja prontos (`store/listings.py`), ícone/arte novos
+   (`tools/make_art.py`), política em `docs/privacy.html` (o Eldo precisa ativar o GitHub Pages: main /docs).
+   Falta, por último: keystore + secrets `KEYSTORE_*`, IDs reais do AdMob e prints da loja.

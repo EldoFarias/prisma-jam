@@ -321,6 +321,15 @@ ADD3 = {
 for _l, _kv in ADD3.items():
     T[_l].update(_kv)
 
+ADD4 = {
+"en": dict(privacy_policy="Privacy policy"), "pt": dict(privacy_policy="Política de privacidade"),
+"es": dict(privacy_policy="Política de privacidad"), "fr": dict(privacy_policy="Politique de confidentialité"),
+"de": dict(privacy_policy="Datenschutzerklärung"), "tr": dict(privacy_policy="Gizlilik politikası"),
+"in": dict(privacy_policy="Kebijakan privasi"), "hi": dict(privacy_policy="गोपनीयता नीति"),
+}
+for _l, _kv in ADD4.items():
+    T[_l].update(_kv)
+
 DIRS = {"en": "values", "pt": "values-pt", "es": "values-es", "fr": "values-fr", "de": "values-de",
         "tr": "values-tr", "in": "values-in", "hi": "values-hi"}
 

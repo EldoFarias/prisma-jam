@@ -93,4 +93,5 @@
     <string name="mech_timed">Les portes avec une horloge s\'ouvrent et se ferment seules. Attends le bon moment.</string>
     <string name="world_x">Monde %1$d</string>
     <string name="trail_chest">Coffre du chemin</string>
+    <string name="privacy_policy">Politique de confidentialité</string>
 </resources>

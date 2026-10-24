@@ -292,6 +292,8 @@ fun HomeScreen(
     }
 }
 
+const val PRIVACY_POLICY_URL = "https://eldofarias.github.io/prisma-jam/privacy.html"
+
 /** Time to press back a second time to leave the game from the menu. */
 private const val EXIT_WINDOW_MS = 2000L
 
@@ -560,7 +562,15 @@ private fun SettingsDialog(ads: AdsManager, onToggleReminder: () -> Unit, onHowT
             SettingsToggles()
             ToggleRow(stringResource(R.string.notifications), Progress.notificationsOn) { onToggleReminder() }
             if (ads.privacyOptionsRequired) PrivacyLink(ads)
-            Spacer(Modifier.height(4.dp))
+            val uri = androidx.compose.ui.platform.LocalUriHandler.current
+            Text(
+                text = stringResource(R.string.privacy_policy),
+                style = Styles.plain(14, Palette.TextSecondary),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { runCatching { uri.openUri(PRIVACY_POLICY_URL) } }
+                    .padding(8.dp),
+            )
             SecondaryButton(stringResource(R.string.how_to)) { onHowTo() }
             PrimaryButton(stringResource(R.string.got_it)) { onClose() }
         }
