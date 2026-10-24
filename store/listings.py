@@ -12,7 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 L = {}
 
 L["en-US"] = dict(
-    title="Prisma Jam: Color Block Puzzle",
+    title="Prisma Jam: Jelly Block Puzzle",
     short="Slide jelly blocks to the gate of their color and watch them burst into glass!",
     full="""Slide the glossy jelly blocks to the gate of the same color and watch them burst into a shower of glass. Prisma Jam is an elegant sliding puzzle: easy to start, hard to master, with a clock ticking.
 

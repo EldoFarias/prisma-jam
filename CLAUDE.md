@@ -11,7 +11,8 @@ Dono: Eldo (EldoFarias). Comunicação em português. Monetização: AdMob (bann
 adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
 ```
 
-- Debug usa sempre IDs de **teste** do AdMob; release lê os IDs reais de variáveis/secrets (`ADMOB_*`).
+- Debug usa sempre IDs de **teste** do AdMob; release lê os IDs reais de variáveis/secrets (`ADMOB_*`) e
+  **falha** se faltar algum ou se for ID de teste.
 - `applicationId` = `com.farias.prismajam` (não mudar depois de publicar).
 - Cada push na `main` gera o APK em Releases → `teste` (`.github/workflows/android.yml`). Erros de compilação
   aparecem como anotações do job.

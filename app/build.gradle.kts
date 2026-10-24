@@ -15,6 +15,11 @@ val testRewarded = "ca-app-pub-3940256099942544/5224354917"
 fun prop(name: String, fallback: String): String =
     (System.getenv(name) ?: project.findProperty(name) as String?)?.takeIf { it.isNotBlank() } ?: fallback
 
+// Release ids: real AdMob ids from secrets; a release with test ids would earn nothing, so it fails.
+val releaseAdIds = listOf("ADMOB_APP_ID", "ADMOB_BANNER_ID", "ADMOB_INTERSTITIAL_ID", "ADMOB_REWARDED_ID")
+    .associateWith { prop(it, "") }
+val missingAdIds = releaseAdIds.filterValues { it.isBlank() || it.startsWith("ca-app-pub-3940256099942544") }.keys
+
 // Release signing comes from environment variables (GitHub Actions secrets).
 val keystorePath: String? = System.getenv("KEYSTORE_PATH")
 
@@ -53,10 +58,10 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            manifestPlaceholders["admobAppId"] = prop("ADMOB_APP_ID", testAppId)
-            buildConfigField("String", "ADMOB_BANNER_ID", "\"${prop("ADMOB_BANNER_ID", testBanner)}\"")
-            buildConfigField("String", "ADMOB_INTERSTITIAL_ID", "\"${prop("ADMOB_INTERSTITIAL_ID", testInterstitial)}\"")
-            buildConfigField("String", "ADMOB_REWARDED_ID", "\"${prop("ADMOB_REWARDED_ID", testRewarded)}\"")
+            manifestPlaceholders["admobAppId"] = releaseAdIds.getValue("ADMOB_APP_ID")
+            buildConfigField("String", "ADMOB_BANNER_ID", "\"${releaseAdIds.getValue("ADMOB_BANNER_ID")}\"")
+            buildConfigField("String", "ADMOB_INTERSTITIAL_ID", "\"${releaseAdIds.getValue("ADMOB_INTERSTITIAL_ID")}\"")
+            buildConfigField("String", "ADMOB_REWARDED_ID", "\"${releaseAdIds.getValue("ADMOB_REWARDED_ID")}\"")
             if (keystorePath != null) signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -78,6 +83,15 @@ android {
 
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    }
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    val missing = missingAdIds.toList()
+    doFirst {
+        if (missing.isNotEmpty()) {
+            throw GradleException("Release sem IDs reais do AdMob: ${missing.joinToString()} (crie os secrets no GitHub)")
+        }
     }
 }
 

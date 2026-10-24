@@ -58,7 +58,7 @@ Play Console → **Criar app**
 - O app coleta ou compartilha algum dos tipos de dados obrigatórios? **Sim**
 - Todos os dados são criptografados em trânsito? **Sim**
 - Oferece forma de solicitar exclusão dos dados? **Não** (o jogo não tem conta; o progresso fica no aparelho
-  e é apagado ao desinstalar; o ID de publicidade é redefinido nas configurações do Android)
+  e no backup do Android do próprio usuário, que ele controla; o ID de publicidade é redefinido nas configurações do Android)
 - Tipos de dados (todos coletados **e** compartilhados pelo SDK do Google Mobile Ads, não obrigatórios
   para o jogo funcionar? → marcar **coleta obrigatória**, porque o usuário não desliga):
   - **Local → Local aproximado** (derivado do IP): Publicidade ou marketing, Análise, Prevenção de fraudes
