@@ -15,6 +15,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +23,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import android.content.Context
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -263,31 +267,47 @@ fun HowToDialog(onClose: () -> Unit) {
     }
 }
 
+/**
+ * Large anchored adaptive banner across the full width. Measured in real pixels because on tablets the app
+ * runs under [Scaled] (bigger density), and the AdView itself uses the real screen density.
+ */
+fun bannerAdSize(context: Context, widthPx: Int): AdSize =
+    AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, (widthPx / context.resources.displayMetrics.density).toInt())
+
+/** Banner height in the current (possibly scaled) dp, to reserve the space before the ad loads. */
+@Composable
+fun bannerHeight(adSize: AdSize): Dp {
+    val context = LocalContext.current
+    return with(LocalDensity.current) { adSize.getHeightInPixels(context).toDp() }
+}
+
 /** Adaptive banner at the bottom. Space is reserved up front so the layout doesn't jump. */
 @Composable
 fun BannerAd(ads: AdsManager) {
     val context = LocalContext.current
     BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val widthDp = maxWidth.value.toInt()
-        @Suppress("DEPRECATION")
-        val adSize = remember(widthDp) { AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, widthDp) }
+        val widthPx = constraints.maxWidth
+        val adSize = remember(widthPx) { bannerAdSize(context, widthPx) }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(adSize.height.dp),
+                .height(bannerHeight(adSize)),
             contentAlignment = Alignment.Center,
         ) {
             if (ads.adsReady) {
-                AndroidView(
-                    factory = { ctx ->
-                        AdView(ctx).apply {
-                            setAdSize(adSize)
-                            adUnitId = ads.bannerId
-                            loadAd(AdRequest.Builder().build())
-                        }
-                    },
-                    onRelease = { it.destroy() },
-                )
+                // New AdView when the size changes (rotation): an AdView's size can't be changed after loading.
+                key(adSize) {
+                    AndroidView(
+                        factory = { ctx ->
+                            AdView(ctx).apply {
+                                setAdSize(adSize)
+                                adUnitId = ads.bannerId
+                                loadAd(AdRequest.Builder().build())
+                            }
+                        },
+                        onRelease = { it.destroy() },
+                    )
+                }
             }
         }
     }

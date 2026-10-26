@@ -83,7 +83,6 @@ import com.farias.prismajam.data.Progress
 import com.farias.prismajam.game.GameViewModel
 import com.farias.prismajam.game.Power
 import com.farias.prismajam.game.Side
-import com.google.android.gms.ads.AdSize
 import kotlinx.coroutines.CancellationException
 import kotlin.math.roundToInt
 
@@ -128,11 +127,8 @@ fun GameScreen(vm: GameViewModel, ads: AdsManager, onGreatMoment: () -> Unit, on
 
         BoxWithConstraints(Modifier.fillMaxSize().systemBarsPadding()) {
             val context = LocalContext.current
-            val widthDp = maxWidth.value.toInt()
-            @Suppress("DEPRECATION")
-            val bannerH = remember(widthDp) {
-                AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, widthDp).height.dp
-            }
+            val widthPx = constraints.maxWidth
+            val bannerH = bannerHeight(remember(widthPx) { bannerAdSize(context, widthPx) })
             val tablet = maxWidth >= 600.dp && maxHeight >= 900.dp
             val ui = if (tablet) 1.25f else 1f
             val compact = maxHeight < 660.dp
