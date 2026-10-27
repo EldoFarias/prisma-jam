@@ -65,6 +65,8 @@ adb logcat -s PrismaJam AndroidRuntime VibratorManagerService
 ## Pendências
 
 1. Testar no celular e ajustar dificuldade/tempo das fases.
-2. Publicação (roteiro em `store/PUBLICAR.md`): textos da loja prontos (`store/listings.py`), ícone/arte novos
-   (`tools/make_art.py`), política em `docs/privacy.html` (o Eldo precisa ativar o GitHub Pages: main /docs).
-   Falta, por último: keystore + secrets `KEYSTORE_*`, IDs reais do AdMob e prints da loja.
+2. **Publicado** (1.0.0 enviada em 2026-10-23; roteiro em `store/PUBLICAR.md`). Keystore fora do Git
+   (`Desktop/eldo/PrismaJam-Keystore`), secrets `KEYSTORE_*` e `ADMOB_*` no GitHub.
+3. **AdMob**: o app certo é "Prisma Jam: Blocos de Cores" `~8669782689` (o que está ligado à loja). Até a 1.0.0 o
+   jogo usava o app "JamesPuzzle" `~4251584581`, sem loja → veiculação limitada; a 1.0.1 (2026-10-27) troca para os
+   blocos novos. O `app-ads.txt` é lido em `odle-x.com.br` (Firebase do projeto arrow-puzzle-odle), não neste repo.
