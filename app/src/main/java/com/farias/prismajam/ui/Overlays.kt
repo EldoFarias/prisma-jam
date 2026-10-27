@@ -268,11 +268,12 @@ fun HowToDialog(onClose: () -> Unit) {
 }
 
 /**
- * Large anchored adaptive banner across the full width. Measured in real pixels because on tablets the app
- * runs under [Scaled] (bigger density), and the AdView itself uses the real screen density.
+ * Anchored adaptive banner across the full width (the large variant looked too tall). Measured in real pixels
+ * because on tablets the app runs under [Scaled] (bigger density), and the AdView itself uses the real density.
  */
+@Suppress("DEPRECATION")
 fun bannerAdSize(context: Context, widthPx: Int): AdSize =
-    AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, (widthPx / context.resources.displayMetrics.density).toInt())
+    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, (widthPx / context.resources.displayMetrics.density).toInt())
 
 /** Banner height in the current (possibly scaled) dp, to reserve the space before the ad loads. */
 @Composable
